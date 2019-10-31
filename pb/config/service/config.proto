@@ -1,0 +1,92 @@
+// Copyright 2019 Samaritan Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package service;
+
+import "google/protobuf/duration.proto";
+
+import "gogoproto/gogo.proto";
+import "validate/validate.proto";
+
+import "common/address.proto";
+import "config/hc/hc.proto";
+import "config/protocol/protocol.proto";
+
+// FIXME: remove hard code
+option go_package = "github.com/samaritan-proxy/samaritan/pb/config/service";
+
+option (gogoproto.enum_stringer_all) = false;
+option (gogoproto.goproto_enum_stringer_all) = true;
+option (gogoproto.equal_all) = true;
+option (gogoproto.verbose_equal_all) = true;
+option (gogoproto.gostring_all) = true;
+option (gogoproto.marshaler_all) = true;
+option (gogoproto.unmarshaler_all) = true;
+
+// Listener configuration.
+message Listener {
+  // The address that the listener should listen on, must be set.
+  common.Address address = 1 [ (validate.rules).message.required = true ];
+
+  // The limit of connections, new connections that exceed this value are immediately be closed.
+  // Default value is 0 that the limit will be disable.
+  uint32 connection_limit = 2;
+}
+
+// Load balance policy.
+enum LoadBalancePolicy {
+  // RoundRobin
+  ROUND_ROBIN = 0;
+  // LeastConnection
+  LEAST_CONNECTION = 1;
+  // Random
+  RANDOM = 2;
+  // Provided by redis cluster
+  CLUSTER_PROVIDED = 3;
+}
+
+// Configuration of service,
+// contains configuration information required for the processor to run.
+message Config {
+  // Listener config, must be set.
+  Listener listener = 1 [ (validate.rules).message.required = true ];
+
+  // Health check will be disabled when not defined.
+  hc.HealthCheck health_check = 2;
+
+  // The maximum time to wait for a connection attempt to a server to succeed, default is 3s.
+  google.protobuf.Duration connect_timeout = 3 [
+    (gogoproto.stdduration) = true,
+    (validate.rules).duration = {gt : {seconds : 0}}
+  ];
+
+  // The maximum inactivity time on the client side, default is 10min.
+  google.protobuf.Duration idle_timeout = 4 [
+    (gogoproto.stdduration) = true,
+    (validate.rules).duration = {gt : {seconds : 0}}
+  ];
+
+  LoadBalancePolicy lb_policy = 5;
+
+  // Protocol of service, can not be UNKNOWN.
+  protocol.Protocol protocol = 6 [ (validate.rules).enum = {not_in : [ 0 ]} ];
+
+  oneof protocol_options {
+    protocol.TCPOption tcp_option = 7;
+    protocol.RedisOption redis_option = 8;
+    protocol.MySQLOption mysql_option = 9;
+  }
+}

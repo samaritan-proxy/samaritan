@@ -1,0 +1,145 @@
+// Copyright 2019 Samaritan Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package bootstrap;
+
+import "gogoproto/gogo.proto";
+import "validate/validate.proto";
+
+import "common/address.proto";
+import "common/instance.proto";
+import "config/service/config.proto";
+import "config/service/service.proto";
+
+option go_package = "github.com/samaritan-proxy/samaritan/pb/config/bootstrap";
+
+option (gogoproto.enum_stringer_all) = false;
+option (gogoproto.goproto_enum_stringer_all) = true;
+option (gogoproto.equal_all) = true;
+option (gogoproto.verbose_equal_all) = true;
+option (gogoproto.gostring_all) = true;
+option (gogoproto.marshaler_all) = true;
+option (gogoproto.unmarshaler_all) = true;
+
+// This message is supplied via '-config' cli flag and act as the
+// root of configuration.
+message Bootstrap {
+  // The instance contains the meta information of the current instance.
+  common.Instance instance = 1;
+
+  // Configuration for log.
+  Log log = 2 [(gogoproto.nullable) = false];
+
+  // Configuration for stats.
+  Stats stats = 3 [(gogoproto.nullable) = false];
+
+  // Configuration for the local administration HTTP server.
+  Admin admin = 4 [ (validate.rules).message.required = true ];
+
+  // Statically specified services.
+  repeated StaticService static_services = 5;
+
+  // Configuration for dynamic source config.
+  ConfigSource dynamic_source_config = 6;
+}
+
+// Sink is a sink for stats. Each Sink is responsible for writing stats
+// to a backing store.
+message Sink {
+  // Sink type
+  enum Type {
+    option (gogoproto.goproto_enum_prefix) = false;
+    UNKNOWN = 0;
+    STATSD = 1; // statsd
+  }
+  Type type = 1 [ (validate.rules).enum = {not_in : [ 0 ]} ];
+
+  // Sink endpoint, not empty.
+  string endpoint = 2 [ (validate.rules).string.min_bytes = 1 ];
+}
+
+// Stats config.
+message Stats {
+  // Optional set of stats sinks.
+  repeated Sink sinks = 1;
+}
+
+// Log config.
+message Log {
+  enum Level {
+    option (gogoproto.goproto_enum_prefix) = false;
+
+    // Print base messages during running. This is in addition to warnings and
+    // errors.
+    INFO = 0;
+
+    // Print everything, including debugging information.
+    DEBUG = -1;
+
+    // Print all warnings and errors.
+    WARING = 1;
+
+    // Print all errors.
+    ERROR = 2;
+
+    // Print nothing.
+    QUIET = 3;
+  }
+  // Logging level
+  Level level = 1;
+
+  message Output {
+    enum Type {
+      option (gogoproto.goproto_enum_prefix) = false;
+      STDOUT = 0; // stdout
+      SYSLOG = 1; // syslog
+    }
+    // Type of output target.
+    Type type = 1;
+
+    // Address of server which is required when `SYSLOG` is selected.
+    string target = 2;
+  }
+  // Output target configuration,
+  // support send log to stdout or syslog, use stdout as default.
+  Output output = 2 [(gogoproto.nullable) = false];
+}
+
+// The admin message is required to configure the administration server.
+message Admin {
+  // The TCP address that the administration server will listen on, not null.
+  common.Address bind = 1 [ (validate.rules).message.required = true ];
+}
+
+// The wrapper of service config and endpoints.
+message StaticService {
+  // The name of service.
+  string name = 1 [(validate.rules).string.min_bytes = 1];
+  // The proxy strategy of service.
+  service.Config config = 2;
+  // The endpoints of service.
+  // Need at least one endpoint.
+  repeated service.Endpoint endpoints = 3
+      [ (validate.rules).repeated .min_items = 1 ];
+}
+
+// Configuration for dynamic source config.
+message ConfigSource {
+  // The gRPC endpoint of dynamic source config service, not null.
+  string endpoint = 1 [ (validate.rules).string.min_bytes = 1 ];
+
+  // TODO: support Authentication and custom grpc lib configurations.
+}

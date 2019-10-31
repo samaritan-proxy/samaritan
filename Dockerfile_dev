@@ -1,0 +1,94 @@
+FROM golang:1.13-alpine
+
+RUN apk add build-base bash coreutils && \
+    apk add --no-cache --virtual .build-deps git make curl autoconf automake libtool
+
+### Protobuf
+# build and install protoc
+ENV PROTOC_VERSION 3.9.1
+RUN curl -sSLo /tmp/protobuf.tar.gz https://github.com/google/protobuf/releases/download/v${PROTOC_VERSION}/protobuf-cpp-${PROTOC_VERSION}.tar.gz && \
+    cd /tmp && \
+    tar xvzf protobuf.tar.gz && \
+    cd /tmp/protobuf-* && \
+    ./autogen.sh && \
+    ./configure && \
+    make -j `nproc` && \
+    make check && \
+    make install && \
+    rm -rf /tmp/protobuf-*
+
+# build and install protoc-gen-gofast, protoc-gen-gogofast
+ENV PROTOC_GEN_GOGO_VERSION 1.3.0
+ENV PROTOC_GEN_GOGO_REPO "github.com/gogo/protobuf"
+RUN dir=$GOPATH/src/$PROTOC_GEN_GOGO_REPO && \
+    mkdir -p $dir && \
+    git clone --branch v$PROTOC_GEN_GOGO_VERSION --depth 1 \
+    https://$PROTOC_GEN_GOGO_REPO $dir && \
+    cd $dir && \
+    rm -rf .git && \
+    go install ./protoc-gen-gofast && \
+    go install ./protoc-gen-gogofast
+
+# build and install protoc-gen-validate
+ENV PROTOC_GEN_VALIDATE_VERSION 0.1.0
+ENV PROTOC_GEN_VALIDATE_REPO "github.com/envoyproxy/protoc-gen-validate"
+RUN dir=$GOPATH/src/$PROTOC_GEN_VALIDATE_REPO && \
+    mkdir -p $dir && \
+    git clone --branch v$PROTOC_GEN_VALIDATE_VERSION --depth 1 \
+    https://$PROTOC_GEN_VALIDATE_REPO $dir && \
+    cd $dir && \
+    rm -rf .git && \
+    make build
+
+# build and install protoc-gen-doc
+ENV PRCTOC_GEN_DOC_VERSION 1.3.0
+ENV PRCTOC_GEN_DOC_REPO "github.com/pseudomuto/protoc-gen-doc"
+RUN dir=$GOPATH/src/$PRCTOC_GEN_DOC_REPO && \
+    mkdir -p $dir && \
+    git clone --branch v$PRCTOC_GEN_DOC_VERSION --depth 1 \
+    https://$PRCTOC_GEN_DOC_REPO $dir && \
+    go get -u -v github.com/golang/dep/cmd/dep && \
+    cd $dir && \
+    rm -rf .git && \
+    dep ensure && \
+    go install ./cmd/protoc-gen-doc
+
+# build and install protoc-gen-jsonify
+ENV PROTOC_GEN_JSONIFY_VERSION 0.0.2
+ENV PROTOC_GEN_JSONIFY_REPO "github.com/hr3lxphr6j/protoc-gen-jsonify"
+RUN dir=$GOPATH/src/$PROTOC_GEN_JSONIFY_REPO && \
+    mkdir -p $dir && \
+    git clone --branch $PROTOC_GEN_JSONIFY_VERSION --depth 1 \
+    https://$PROTOC_GEN_JSONIFY_REPO $dir && \
+    cd $dir && \
+    rm -rf .git && \
+    go install ./
+
+
+### End Protobuf
+
+
+### Mockgen
+ENV MOCKGEN_VERSION 1.2.0
+ENV MOCKGEN_REPO "github.com/golang/mock"
+RUN dir=$GOPATH/src/$MOCKGEN_REPO && \
+    mkdir -p $dir && \
+    git clone --branch v$MOCKGEN_VERSION --depth 1 \
+    https://$MOCKGEN_REPO $dir && \
+    cd $dir && \
+    rm -rf .git && \
+    go install ./mockgen
+
+### End Mockgen
+
+
+RUN apk del .build-deps && \
+    rm -rf $GOPATH/pkg/dep && \
+    rm -rf /usr/local/lib/libproto*.a && \
+    rm -rf /root/.cache
+
+
+ENV SAM_PATH=/go/src/github.com/samaritan-proxy/samaritan
+WORKDIR $SAM_PATH
+
+CMD ["/bin/bash"]

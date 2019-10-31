@@ -1,0 +1,87 @@
+// Copyright 2019 Samaritan Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package discovery;
+
+import "gogoproto/gogo.proto";
+import "validate/validate.proto";
+
+import "common/instance.proto";
+import "config/service/service.proto";
+import "config/service/config.proto";
+
+option go_package = "github.com/samaritan-proxy/samaritan/pb/api";
+
+option (gogoproto.enum_stringer_all) = false;
+option (gogoproto.goproto_enum_stringer_all) = true;
+option (gogoproto.equal_all) = true;
+option (gogoproto.verbose_equal_all) = true;
+option (gogoproto.gostring_all) = true;
+option (gogoproto.marshaler_all) = true;
+option (gogoproto.unmarshaler_all) = true;
+
+// DiscoveryService is a service which is used to discover service, service config
+// and service endpoints.
+service DiscoveryService {
+  rpc StreamSvcs(SvcDiscoveryRequest)
+      returns (stream SvcDiscoveryResponse) {}
+
+  rpc StreamSvcConfigs(stream SvcConfigDiscoveryRequest)
+      returns (stream SvcConfigDiscoveryResponse) {}
+
+  rpc StreamSvcEndpoints(stream SvcEndpointDiscoveryRequest)
+      returns (stream SvcEndpointDiscoveryResponse) {}
+}
+
+message SvcDiscoveryRequest {
+  // Meta information of the current instance.
+  common.Instance instance = 1;
+}
+
+message SvcDiscoveryResponse {
+  // Added service.
+  repeated service.Service added = 1;
+  // Removed service.
+  repeated service.Service removed = 2;
+}
+
+message SvcConfigDiscoveryRequest {
+  // All service names that need to subscribe.
+  repeated string svc_names_subscribe = 1;
+  // All service names that need to unsubscribe.
+  repeated string svc_names_unsubscribe = 2;
+}
+
+message SvcConfigDiscoveryResponse {
+  // Update of configuration.
+  map<string, service.Config> updated = 1;
+}
+
+message SvcEndpointDiscoveryRequest {
+  // All service names that need to subscribe.
+  repeated string svc_names_subscribe = 1;
+  // All service names that need to unsubscribe.
+  repeated string svc_names_unsubscribe = 2;
+}
+
+message SvcEndpointDiscoveryResponse {
+  // Name of service which endpoints had updated.
+  string svc_name = 1;
+  // Added endpoints.
+  repeated service.Endpoint added = 2;
+  // Removed endpoints.
+  repeated service.Endpoint removed = 3;
+}

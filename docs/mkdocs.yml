@@ -1,0 +1,55 @@
+# Project information
+site_name: Samaritan Documentation
+site_url: https://samaritan-proxy.github.io
+
+# Repository
+repo_name: samaritan-proxy/samaritan
+repo_url: http://github.com/samaritan-proxy/samaritan
+
+# Copyright
+copyright: 'Copyright &copy; 2019 Samaritan Developers'
+
+# Configuration
+theme:
+  name: material
+  palette:
+    primary: black
+    accent: black
+  font:
+    text: 'Roboto'
+    code: 'Roboto Mono'
+docs_dir: ./src
+nav:
+  - Introduction: index.md
+  - Getting Started: start.md
+  - Architecture:
+      - Overview: arch/overview.md
+      - Admin API: arch/admin-api.md
+      - Stats: arch/stats.md
+      - Protocol:
+          - TCP: arch/protocol/tcp.md
+          - Redis:
+              - Overview: arch/protocol/redis/redis.md
+  - Changelog: changelog.md
+  - Proto Reference: proto-ref.md
+  - FAQ: faq.md
+
+# Extensions
+markdown_extensions:
+  - admonition
+  - codehilite:
+      guess_lang: false
+  - toc:
+      permalink: true
+
+extra_javascript:
+  - https://unpkg.com/mermaid@7.1.0/dist/mermaid.min.js
+  - https://cdnjs.cloudflare.com/ajax/libs/raphael/2.2.7/raphael.min.js
+  - https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js
+  - https://cdnjs.cloudflare.com/ajax/libs/js-sequence-diagrams/1.0.6/sequence-diagram-min.js
+  - https://cdnjs.cloudflare.com/ajax/libs/flowchart/1.6.5/flowchart.min.js
+  - js/umlconvert.js
+
+google_analytics:
+  - 'UA-150917439-1'
+  - 'auto'
