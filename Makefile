@@ -15,6 +15,7 @@
 .EXPORT_ALL_VARIABLES:
 
 REPO_URI = github.com/samaritan-proxy/samaritan
+VERSION = $(shell grep "Version = " consts/consts.go | cut -d '"' -f2)
 BUILD_IN_DOCKER ?= 0
 
 GO_VERSION ?= 1.13
@@ -69,8 +70,8 @@ pub-docs: docs
 dev-image:
 	docker build -t samaritanproxy/sam-dev -f ./Dockerfile_dev .
 
-.PHONY: pub-dev-image
-pub-dev-image:
+.PHONY: push-dev-image
+push-dev-image:
 	docker push samaritanproxy/sam-dev
 
 .PHONY: generate
@@ -103,6 +104,10 @@ ci: build test integration-test
 .PHONY: release
 release:
 	./hack/release.sh
+
+.PHONY: push-release-image
+push-release-image:
+	docker push samaritanproxy/samaritan:${VERSION}
 
 
 .PHONY: clean

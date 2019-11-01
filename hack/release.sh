@@ -14,14 +14,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+set -o errexit
+set -o pipefail
+set -o nounset
+
 readonly SUPPORTED_PLATFORMS=(
     linux/amd64
     darwin/amd64
 )
 readonly RELEASE_DIR=".release"
-readonly VERSION=$(grep "Version = " consts/consts.go | cut -d '"' -f2)
 readonly DOCKER_REPO="samaritanproxy/samaritan"
 readonly DOCKER_TAG=$VERSION
+readonly IMAGE_NAME="$DOCKER_REPO:$DOCKER_TAG"
 
 for platform in "${SUPPORTED_PLATFORMS[@]}"; do
     export GOOS=${platform%/*}
@@ -42,6 +46,7 @@ for platform in "${SUPPORTED_PLATFORMS[@]}"; do
 
     # build image, only support linux/amd64 currently
     if [ "$GOOS" == "linux" ] && [ "$GOARCH" == "amd64" ]; then
-        docker build -t "$DOCKER_REPO:$DOCKER_TAG" -f Dockerfile "./bin/$GOOS-$GOARCH"
+        docker build -t "$IMAGE_NAME" -f Dockerfile "./bin/$GOOS-$GOARCH"
+        echo "Built image $IMAGE_NAME"
     fi
 done
