@@ -116,3 +116,4 @@ clean:
 	@rm -rf docs/site
 	@rm -rf .release
 	@find . -name "cover.out" -exec rm {} \;
+	@rm coverage.txt

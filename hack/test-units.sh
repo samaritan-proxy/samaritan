@@ -20,9 +20,16 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
+# for codecov.io, refer to https://github.com/codecov/example-go
+echo "" > coverage.txt
+
 # TODO(kirk91): add more options such as GOLFAGS, TEST PACKAGE
 pkgs=$(go list ./... | grep -E -v '/test/|/pb/')
 for pkg in $pkgs; do
     dir=${pkg/$REPO_URI\//}
-    go test -cover -coverprofile "$dir/cover.out" "$pkg"
+    # TODO: enable race detector
+    go test -coverprofile "$dir/cover.out" -covermode=atomic "$pkg"
+    if [ -f "$dir/cover.out" ]; then
+        cat "$dir/cover.out" >> coverage.txt
+    fi
 done
