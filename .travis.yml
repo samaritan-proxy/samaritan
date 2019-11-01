@@ -18,14 +18,10 @@ after_success:
 before_deploy:
   - 'if [ "$TRAVIS_TAG" != "" ]; then make release; fi'
 deploy:
+  skip_cleanup: true
   # deploy docs to website
   - provider: script
-    script:
-      - openssl aes-256-cbc -K $encrypted_fa8540867d09_key -iv $encrypted_fa8540867d09_iv -in .travis/docs_deploy_key.enc -out .travis/docs_deploy_key -d
-      - chmod 600 .travis/docs_deploy_key
-      - export GIT_SSH_COMMAND="ssh -i .travis/docs_deploy_key"
-      - make pub-docs
-      - unset GIT_SSH_COMMAND
+    script: .travis/deploy_docs.sh
 
   # deploy tarballs to github
   - provider: releases
@@ -39,8 +35,6 @@ deploy:
 
   # deploy images to dockerhub
   - provider: script
-    script:
-      - echo "$DOCKER_ACCESS_TOKEN" | docker login -u "$DOCKER_USERNAME" --password-stdin
-      - make push-release-image
+    script: echo "$DOCKER_ACCESS_TOKEN" | docker login -u "$DOCKER_USERNAME" --password-stdin && make push-release-image
     on:
       tags: true
