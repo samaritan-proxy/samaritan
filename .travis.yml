@@ -18,7 +18,6 @@ after_success:
 before_deploy:
   - 'if [ "$TRAVIS_TAG" != "" ]; then make release; fi'
 deploy:
-  skip_cleanup: true
   # deploy docs to website
   - provider: script
     script: .travis/deploy_docs.sh
