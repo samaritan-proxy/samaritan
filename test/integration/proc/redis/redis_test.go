@@ -380,6 +380,10 @@ func testAppend(t *testing.T) {
 	assert.Equal(t, result, 0)
 
 	result, err = c.Append("mykey", "Hello")
+	if inCpsMode {
+		assert.Error(t, err)
+		return
+	}
 	assert.NoError(t, err)
 	assert.Equal(t, result, 5)
 
@@ -528,6 +532,10 @@ func testGetBit(t *testing.T) {
 	defer c.Del("mykey")
 
 	result, err := c.SetBit("mykey", 7, 1)
+	if inCpsMode {
+		assert.Error(t, err)
+		return
+	}
 	assert.NoError(t, err)
 	assert.Equal(t, 0, result)
 
@@ -556,6 +564,10 @@ func testGetRange(t *testing.T) {
 	assert.Equal(t, "OK", result)
 
 	val, err := c.GetRange("mykey", 0, 3)
+	if inCpsMode {
+		assert.Error(t, err)
+		return
+	}
 	assert.NoError(t, err)
 	assert.Equal(t, "This", val)
 
@@ -734,6 +746,10 @@ func testSetBit(t *testing.T) {
 	defer c.Del("key")
 
 	result, err := c.SetBit("key", 7, 1)
+	if inCpsMode {
+		assert.Error(t, err)
+		return
+	}
 	assert.NoError(t, err)
 	assert.Equal(t, 0, result)
 
@@ -798,6 +814,10 @@ func testSetRange(t *testing.T) {
 	assert.Equal(t, "OK", result)
 
 	n, err := c.SetRange("key1", 6, "Redis")
+	if inCpsMode {
+		assert.Error(t, err)
+		return
+	}
 	assert.NoError(t, err)
 	assert.Equal(t, 11, n)
 
@@ -2732,6 +2752,10 @@ func testEval(t *testing.T) {
 
 	lua := "return {KEYS[1], ARGV[1]}"
 	vals, err := c.Eval(lua, []string{"key1"}, "first")
+	if inCpsMode {
+		assert.Error(t, err)
+		return
+	}
 	assert.NoError(t, err)
 	assert.Equal(t, []interface{}{[]byte("key1"), []byte("first")}, vals)
 }

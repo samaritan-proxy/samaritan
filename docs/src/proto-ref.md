@@ -35,9 +35,11 @@
 - [config/protocol/protocol.proto](#config/protocol/protocol.proto)
     - [MySQLOption](#protocol.MySQLOption)
     - [RedisOption](#protocol.RedisOption)
+    - [RedisOption.Compression](#protocol.RedisOption.Compression)
     - [TCPOption](#protocol.TCPOption)
   
     - [Protocol](#protocol.Protocol)
+    - [RedisOption.Compression.Method](#protocol.RedisOption.Compression.Method)
     - [RedisOption.ReadStrategy](#protocol.RedisOption.ReadStrategy)
   
   
@@ -417,6 +419,24 @@ Redis protocol option.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | read_strategy | [RedisOption.ReadStrategy](#protocol.RedisOption.ReadStrategy) |  | Strategy of a read only command. |
+| compression | [RedisOption.Compression](#protocol.RedisOption.Compression) |  |  |
+
+
+
+
+
+
+<a name="protocol.RedisOption.Compression"></a>
+
+### RedisOption.Compression
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| enable | [bool](#bool) |  | Switch of compress, default is off. NOTE: Uncompress will always work. |
+| method | [RedisOption.Compression.Method](#protocol.RedisOption.Compression.Method) |  | Compression algorithm used in compression filter. |
+| threshold | [uint32](#uint32) |  | Value will be ignored when byte length of value is less than the threshold, must be greater than 0. |
 
 
 
@@ -446,6 +466,19 @@ Protocol enum.
 | TCP | 1 | TCP |
 | MySQL | 2 | MySQL |
 | Redis | 3 | Redis |
+
+
+
+<a name="protocol.RedisOption.Compression.Method"></a>
+
+### RedisOption.Compression.Method
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| PLAIN | 0 |  |
+| SNAPPY | 1 |  |
+| MOCK | 255 | only for test |
 
 
 

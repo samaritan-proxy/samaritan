@@ -92,3 +92,31 @@ func (m *RedisOption) UnmarshalJSON(b []byte) error {
 }
 var _ json.Unmarshaler = (*RedisOption)(nil)
 
+// RedisOption_CompressionJSONMarshaler describes the default jsonpb.Marshaler used by all
+// instances of RedisOption_Compression. This struct is safe to replace or modify but
+// should not be done so concurrently.
+var RedisOption_CompressionJSONMarshaler = new(jsonpb.Marshaler)
+// MarshalJSON satisfies the encoding/json Marshaler interface. This method
+// uses the more correct jsonpb package to correctly marshal the message.
+func (m *RedisOption_Compression) MarshalJSON() ([]byte, error) {
+	if m == nil {
+		return json.Marshal(nil)
+	}
+	buf := &bytes.Buffer{}
+	if err := RedisOption_CompressionJSONMarshaler.Marshal(buf, m); err != nil {
+	  return nil, err
+	}
+	return buf.Bytes(), nil
+}
+var _ json.Marshaler = (*RedisOption_Compression)(nil)
+// RedisOption_CompressionJSONUnmarshaler describes the default jsonpb.Unmarshaler used by all
+// instances of RedisOption_Compression. This struct is safe to replace or modify but
+// should not be done so concurrently.
+var RedisOption_CompressionJSONUnmarshaler = new(jsonpb.Unmarshaler)
+// UnmarshalJSON satisfies the encoding/json Unmarshaler interface. This method
+// uses the more correct jsonpb package to correctly unmarshal the message.
+func (m *RedisOption_Compression) UnmarshalJSON(b []byte) error {
+	return RedisOption_CompressionJSONUnmarshaler.Unmarshal(bytes.NewReader(b), m)
+}
+var _ json.Unmarshaler = (*RedisOption_Compression)(nil)
+

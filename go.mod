@@ -9,6 +9,7 @@ require (
 	github.com/gogo/protobuf v1.3.0
 	github.com/golang/mock v1.3.1
 	github.com/golang/protobuf v1.3.2 // indirect
+	github.com/golang/snappy v0.0.1
 	github.com/gomodule/redigo v2.0.0+incompatible
 	github.com/gorilla/mux v1.7.3
 	github.com/kavu/go_reuseport v1.4.0

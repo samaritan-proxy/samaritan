@@ -12,25 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package redis
+package compressor
 
-import "github.com/samaritan-proxy/samaritan/pb/config/service"
+import (
+	"testing"
 
-// Maybe will add some internal fields in the future, so define it.
-type config struct {
-	*service.Config
-}
+	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/assert"
 
-func newConfig(c *service.Config) *config {
-	return &config{
-		Config: c,
-	}
-}
+	"github.com/samaritan-proxy/samaritan/pb/config/protocol"
+)
 
-func (c *config) Update(cfg *service.Config) {
-	c.Config = cfg
-}
+func TestRegister(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
 
-func (c *config) Raw() *service.Config {
-	return c.Config
+	c := NewMockCompressor(ctrl)
+	Register(protocol.MOCK.String(), c)
+	defer UnRegister(protocol.MOCK.String())
+
+	cps, ok := get(protocol.MOCK.String())
+	assert.True(t, ok)
+	assert.Equal(t, c, cps)
+
+	assert.Panics(t, func() {
+		Register(protocol.MOCK.String(), c)
+	})
 }

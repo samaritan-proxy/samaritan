@@ -14,6 +14,12 @@
 
 package redis
 
+import (
+	"bytes"
+	"strings"
+	"sync"
+)
+
 var crc16tab = [256]uint16{
 	0x0000, 0x1021, 0x2042, 0x3063, 0x4084, 0x50a5, 0x60c6, 0x70e7,
 	0x8108, 0x9129, 0xa14a, 0xb16b, 0xc18c, 0xd1ad, 0xe1ce, 0xf1ef,
@@ -79,4 +85,61 @@ func hashtag(b []byte) []byte {
 		return b
 	}
 	return b[i+1 : j]
+}
+
+func getCommandFromResp(resp *RespValue) string {
+	if resp == nil || len(resp.Array) == 0 {
+		return ""
+	}
+	return strings.ToLower(string(resp.Array[0].Text))
+}
+
+var bufferPool = sync.Pool{
+	New: func() interface{} {
+		return bytes.NewBuffer([]byte{})
+	},
+}
+
+func newBuffer() buffer {
+	buf := bufferPool.Get().(*bytes.Buffer)
+	buf.Reset()
+	return buffer{
+		Buffer: buf,
+		pool:   &bufferPool,
+	}
+}
+
+type buffer struct {
+	*bytes.Buffer
+	pool *sync.Pool
+}
+
+func (b *buffer) Close() {
+	b.Reset()
+	b.pool.Put(b.Buffer)
+	b.Buffer = nil
+}
+
+var readerPool = sync.Pool{
+	New: func() interface{} {
+		return new(bytes.Reader)
+	},
+}
+
+func newReader() reader {
+	r := readerPool.Get().(*bytes.Reader)
+	return reader{
+		Reader: r,
+		pool:   &readerPool,
+	}
+}
+
+type reader struct {
+	*bytes.Reader
+	pool *sync.Pool
+}
+
+func (r *reader) Close() {
+	r.pool.Put(r.Reader)
+	r.Reader = nil
 }

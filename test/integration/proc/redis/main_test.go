@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"log"
 	"math/rand"
 	"net"
 	"os"
@@ -30,11 +31,11 @@ import (
 	"testing"
 	"time"
 
+	hostpkg "github.com/samaritan-proxy/samaritan/host"
+	"github.com/samaritan-proxy/samaritan/logger"
 	"github.com/samaritan-proxy/samaritan/pb/common"
 	"github.com/samaritan-proxy/samaritan/pb/config/protocol"
 	"github.com/samaritan-proxy/samaritan/pb/config/service"
-	hostpkg "github.com/samaritan-proxy/samaritan/host"
-	"github.com/samaritan-proxy/samaritan/logger"
 	"github.com/samaritan-proxy/samaritan/proc"
 	_ "github.com/samaritan-proxy/samaritan/proc/redis"
 	"github.com/samaritan-proxy/samaritan/utils"
@@ -51,6 +52,8 @@ var (
 	processor proc.Proc
 
 	defaultClusterManager = NewRedisCliClusterManager()
+
+	inCpsMode = false
 )
 
 type ClusterManager interface {
@@ -492,7 +495,7 @@ func (m *RedisCliClusterManager) DisableAuth() error {
 
 func setupRedisProxy() {
 	hosts := make([]*hostpkg.Host, 0)
-	// the fourth redis server is alone, not the memeber of cluster.
+	// the fourth redis server is alone, not the member of cluster.
 	for i := 0; i < 3; i++ {
 		addr := fmt.Sprintf("127.0.0.1:%d", redisSvrPorts[i])
 		hosts = append(hosts, hostpkg.New(addr))
@@ -510,6 +513,9 @@ func setupRedisProxy() {
 		ProtocolOptions: &service.Config_RedisOption{
 			RedisOption: &protocol.RedisOption{
 				ReadStrategy: protocol.RedisOption_MASTER,
+				Compression: &protocol.RedisOption_Compression{
+					Enable: false,
+				},
 			},
 		},
 	}
@@ -537,6 +543,28 @@ func getProxyAddress() string {
 	return fmt.Sprintf("127.0.0.1:%d", proxyPort)
 }
 
+func setCompress(enable bool, threshold uint32) {
+	if processor == nil {
+		return
+	}
+	// deep copy
+	b, err := processor.Config().Marshal()
+	if err != nil {
+		log.Fatal(err)
+	}
+	cfg := new(service.Config)
+	if err := cfg.Unmarshal(b); err != nil {
+		log.Fatal(err)
+	}
+
+	cfg.GetRedisOption().Compression.Enable = enable
+	cfg.GetRedisOption().Compression.Threshold = threshold
+	if err := processor.OnSvcConfigUpdate(cfg); err != nil {
+		log.Fatal(err)
+	}
+	inCpsMode = true
+}
+
 const AuthPwd = "abc"
 
 func TestMain(m *testing.M) {
@@ -545,14 +573,29 @@ func TestMain(m *testing.M) {
 		addr, _ := net.ResolveTCPAddr("tcp4", fmt.Sprintf("127.0.0.1:%d", port))
 		nodes = append(nodes, addr)
 	}
-	if err := defaultClusterManager.Start(nodes...); err != nil {
-		logger.Fatal(err)
+	testWithNewCluster := func(fn func()) {
+		if err := defaultClusterManager.Start(nodes...); err != nil {
+			logger.Fatal(err)
+		}
+		defer defaultClusterManager.Shutdown()
+		initRedisClient()
+		defer c.Close()
+		fn()
 	}
+
 	setupRedisProxy()
-	initRedisClient()
 
-	code := m.Run()
+	var code = 0
+	defer os.Exit(code)
+	testWithNewCluster(func() {
+		code = m.Run()
+	})
+	if code != 0 {
+		return
+	}
 
-	defaultClusterManager.Shutdown()
-	os.Exit(code)
+	setCompress(true, 1)
+	testWithNewCluster(func() {
+		code = m.Run()
+	})
 }

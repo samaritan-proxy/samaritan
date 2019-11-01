@@ -19,9 +19,9 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/samaritan-proxy/samaritan/host"
 	"github.com/samaritan-proxy/samaritan/pb/common"
 	"github.com/samaritan-proxy/samaritan/pb/config/service"
-	"github.com/samaritan-proxy/samaritan/host"
 	"github.com/samaritan-proxy/samaritan/proc"
 	"github.com/samaritan-proxy/samaritan/proc/internal/log"
 	"github.com/samaritan-proxy/samaritan/stats"
@@ -46,23 +46,6 @@ func newRedisTestProc(t *testing.T) *redisProc {
 		t.Fatal(err)
 	}
 	return p
-}
-
-func TestConfigHook(t *testing.T) {
-	p := newRedisTestProc(t)
-	called := false
-	p.registerConfigHook(func(i *config) { called = true })
-	assert.NoError(t, p.OnSvcConfigUpdate(nil))
-	assert.True(t, called)
-
-}
-
-func TestOnSvcConfigUpdateWithBadConfig(t *testing.T) {
-	p := newRedisTestProc(t)
-	called := false
-	p.registerConfigHook(func(i *config) { called = true })
-	assert.Error(t, p.OnSvcConfigUpdate(&service.Config{}))
-	assert.False(t, called)
 }
 
 func TestRedisProc_Name(t *testing.T) {

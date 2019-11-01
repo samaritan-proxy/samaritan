@@ -60,5 +60,28 @@ message RedisOption {
   // Strategy of a read only command.
   ReadStrategy read_strategy = 1;
 
-  reserved 2 to 4;
+  message Compression {
+    // Switch of compress, default is off.
+    // NOTE: Uncompress will always work.
+    bool enable = 1;
+
+    enum Method {
+      option (gogoproto.goproto_enum_prefix) = false;
+      PLAIN = 0;
+
+      SNAPPY = 1;
+
+      // only for test
+      MOCK = 255;
+    }
+    // Compression algorithm used in compression filter.
+    Method method = 2;
+
+    // Value will be ignored when byte length of value is less than the
+    // threshold, must be greater than 0.
+    uint32 threshold = 3 [ (validate.rules).uint32 = {gt : 0} ];
+  }
+  Compression compression = 2;
+
+  reserved 3 to 4;
 }

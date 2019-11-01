@@ -25,6 +25,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/samaritan-proxy/samaritan/pb/config/service"
 	"github.com/samaritan-proxy/samaritan/utils"
 
 	"github.com/stretchr/testify/assert"
@@ -261,9 +262,9 @@ func newTestUpstream(cfg *config, hosts ...*host.Host) *upstream {
 
 	if cfg == nil {
 		// TODO: use the default config
-		cfg = &config{
+		cfg = newConfig(&service.Config{
 			ConnectTimeout: utils.DurationPtr(time.Second),
-		}
+		})
 	}
 
 	if hosts == nil {
