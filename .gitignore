@@ -33,3 +33,4 @@ __pycache__/
 /docs/site/
 website
 .release
+coverage.txt
