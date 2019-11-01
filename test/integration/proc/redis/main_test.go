@@ -577,9 +577,17 @@ func TestMain(m *testing.M) {
 		if err := defaultClusterManager.Start(nodes...); err != nil {
 			logger.Fatal(err)
 		}
-		defer defaultClusterManager.Shutdown()
+		defer func() {
+			if err := defaultClusterManager.Shutdown(); err != nil {
+				log.Fatalf("failed to shutdown cluster manager, err: %v", err)
+			}
+		}()
 		initRedisClient()
-		defer c.Close()
+		defer func() {
+			if err := c.Close(); err != nil {
+				log.Fatalf("failed to close redis client, err: %v", err)
+			}
+		}()
 		fn()
 	}
 

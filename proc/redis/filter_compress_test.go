@@ -203,7 +203,7 @@ func TestDecompress(t *testing.T) {
 	rawData := []byte("compressed_data")
 	c.EXPECT().Decompress(gomock.Any()).DoAndReturn(func(r io.Reader) io.Reader {
 		return newMockReader(func(p []byte) (n int, err error) {
-			ioutil.ReadAll(r)
+			_, _ = ioutil.ReadAll(r)
 			n = copy(p, rawData)
 			err = io.EOF
 			return
