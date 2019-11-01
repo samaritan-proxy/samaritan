@@ -46,7 +46,7 @@ $(notdir $(abspath $(wildcard cmd/*/))):
 		-e GOPROXY=$(GOPROXY) \
 		-e REPO_URI=$(REPO_URI) \
 		--mount type=bind,source=`pwd`,destination=/samaritan \
-		-w '/samaritan' \
+		-w /samaritan \
 		golang:$(GO_VERSION) \
 		./hack/build.sh $@
 else
@@ -59,10 +59,14 @@ endif
 
 .PHONY: docs
 docs:
-	@./docs/build.sh
+	docker run --rm \
+		--mount type=bind,source=`pwd`,destination=/samaritan \
+		-w /samaritan \
+		python:3.7-alpine \
+		sh -c "apk add bash && ./docs/build.sh"
 
 .PHONY: pub-docs
-pub-docs: docs
+pub-docs:
 	@./docs/publish.sh
 
 

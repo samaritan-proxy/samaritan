@@ -9,7 +9,7 @@ env:
   global:
     - DOCKER_USERNAME=samcibot
     # DOCKER_ACCESS_TOKEN
-    - secure: LoVcy1JsqjnOGD6fMJjFY4xTjEOyxs7PFcJoaU/kpPnYBwyN8xY3AewiBoy+j0fPWOcvpda38hYiwTpoee3ShZnxglM2C/neDBnJo1G/fkP1riOLjWchY6XcRejRvZ9yDI9KApYkQuQjCxS7W1MQeTyWZhcyhLUaQEHtTqapzr8Mm5zJAAGaBSXznkUqw/jjnxUCWaevu3tFoQLYjpXE7l0AMX6/9PdtaKcC0q8XzlHxDPlw85zur0SGy2aZWHH4jz6oq+graWV39X3wPKo0ukU2GwVyDiW+R6z9I9Sp/sA6yJ6BaYy8yaRw5FwlsSkNCyd9YPeMDk87epcTeJrUl9BDXVsvLa+fycIgGOh9NumWQEjDJ9NmEyfrHJmrc5WB6rqU3LrcXp0YgQX57YNdWFMPcx05auA+D+37NikgcEcWPW9FWMpku28/fh968QEh2+u3eHzXKzVDy2LoajpUb0cMndRDpMkT+hQPiN0s4WD+1Sc/cogi7eZmLcIW539+i8o0TeDM/TVHN6fidoMuf/ZbspCH7QR6AvF916RM70W4/KosEJZDVONS+Ya4JCt/lCzI1pgrZ2U7LCZnqouTrZqAwbJXvDrooTUc+izBEc14xFefYk6eUrSCNiDcq0N8+TSBr1WEYmlz8E/hbYaAbRaOIjNTMLnbBfPhn+2tZPM=
+    - secure: Km9VK1JaBp7CudcmoyFbisRARxdwux9TNJdJ45sSXqSCbTtUWBH4n6yk+Hm3qkLY5JBKfCWVfGlu9TjM6uPvsndMYtocVeWm5RZGBRIsjVGOBkgbxkYaWfCfHeBhI1/caWA+bWrAuZZ5u+I//YCtHizHEbIzQqesxtb49ob9wfZnvFjYbp19YZ3sWFt/uQYn57IXu8NWY6T7SbKzJBbDmnROm9vCZQ3MLBx9QsH3J2h8rdmfb0RHa7AMpOXkdK1IQC1abqQhxOoWYhNY++eDP6i0iL+hJ6L6EN6X7IPoPr/y1unpQcPuYy40USGtewSz6+i05Bgmc00rHgZRaO2ixaPpWzAFJW4Z0c5kNk/IFuBoqIlV61do6Y/vMkAfHTt/HCqkJ/Ua+MrmMuLOqzMMMiqVMeAOdLirk2EiVmgPcSwjvAqUVzQoV9BCtWO4kgzQIpw1PaYkLdq0kAkmXDrFSvpUBfTGoflTRLHQwAmmi3ElX56FXoD7OXn8tY7zAxDftAqG94NfQhjRzfV/j8UTMhFdmg7ke2JQbTptyRfrDupQxxIc6ikQcJwGJu8YsEAEEzsWBVphUYjwl0uI140FGuhLZLMj/+bvKmR9z7WIV4eu/nmv4p5vZVhyFGTqFLMsAYKfsEZtoNX6SvRKfDO3HJGOqgbkJDP1Le4JHkYcaEc=
 
 script: make ci
 after_success:
@@ -17,13 +17,12 @@ after_success:
 
 before_deploy:
   - 'if [ "$TRAVIS_TAG" != "" ]; then make release; fi'
-  # unencrypt deploy key for docs
-  - openssl aes-256-cbc -K $encrypted_fa8540867d09_key -iv $encrypted_fa8540867d09_iv -in .travis/docs_deploy_key.enc -out .travis/docs_deploy_key -d
-  - chmod 600 .travis/docs_deploy_key
 deploy:
   # deploy docs to website
   - provider: script
-    script: export GIT_SSH_COMMAND="ssh -i .travis/docs_deploy_key" && make pub-docs && unset GIT_SSH_COMMAND
+    script: .travis/deploy_docs.sh
+    on:
+      all_branches: true
 
   # deploy tarballs to github
   - provider: releases
