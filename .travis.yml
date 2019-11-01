@@ -7,7 +7,7 @@ services:
 
 env:
   global:
-    - DOCKER_USERNAME samcibot
+    - DOCKER_USERNAME=samcibot
     # DOCKER_ACCESS_TOKEN
     - secure: LoVcy1JsqjnOGD6fMJjFY4xTjEOyxs7PFcJoaU/kpPnYBwyN8xY3AewiBoy+j0fPWOcvpda38hYiwTpoee3ShZnxglM2C/neDBnJo1G/fkP1riOLjWchY6XcRejRvZ9yDI9KApYkQuQjCxS7W1MQeTyWZhcyhLUaQEHtTqapzr8Mm5zJAAGaBSXznkUqw/jjnxUCWaevu3tFoQLYjpXE7l0AMX6/9PdtaKcC0q8XzlHxDPlw85zur0SGy2aZWHH4jz6oq+graWV39X3wPKo0ukU2GwVyDiW+R6z9I9Sp/sA6yJ6BaYy8yaRw5FwlsSkNCyd9YPeMDk87epcTeJrUl9BDXVsvLa+fycIgGOh9NumWQEjDJ9NmEyfrHJmrc5WB6rqU3LrcXp0YgQX57YNdWFMPcx05auA+D+37NikgcEcWPW9FWMpku28/fh968QEh2+u3eHzXKzVDy2LoajpUb0cMndRDpMkT+hQPiN0s4WD+1Sc/cogi7eZmLcIW539+i8o0TeDM/TVHN6fidoMuf/ZbspCH7QR6AvF916RM70W4/KosEJZDVONS+Ya4JCt/lCzI1pgrZ2U7LCZnqouTrZqAwbJXvDrooTUc+izBEc14xFefYk6eUrSCNiDcq0N8+TSBr1WEYmlz8E/hbYaAbRaOIjNTMLnbBfPhn+2tZPM=
 
@@ -17,10 +17,13 @@ after_success:
 
 before_deploy:
   - 'if [ "$TRAVIS_TAG" != "" ]; then make release; fi'
+  # unencrypt deploy key for docs
+  - openssl aes-256-cbc -K $encrypted_fa8540867d09_key -iv $encrypted_fa8540867d09_iv -in .travis/docs_deploy_key.enc -out .travis/docs_deploy_key -d
+  - chmod 600 .travis/docs_deploy_key
 deploy:
   # deploy docs to website
   - provider: script
-    script: .travis/deploy_docs.sh
+    script: export GIT_SSH_COMMAND="ssh -i .travis/docs_deploy_key" && make pub-docs && unset GIT_SSH_COMMAND
 
   # deploy tarballs to github
   - provider: releases
