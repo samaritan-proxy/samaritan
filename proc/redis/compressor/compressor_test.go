@@ -20,22 +20,22 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/samaritan-proxy/samaritan/pb/config/protocol"
+	"github.com/samaritan-proxy/samaritan/pb/config/protocol/redis"
 )
 
 func TestRegister(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	c := NewMockCompressor(ctrl)
-	Register(protocol.MOCK.String(), c)
-	defer UnRegister(protocol.MOCK.String())
+	c := NewMockcompressor(ctrl)
+	Register(redis.Compression_MOCK.String(), c)
+	defer UnRegister(redis.Compression_MOCK.String())
 
-	cps, ok := get(protocol.MOCK.String())
+	cps, ok := get(redis.Compression_MOCK.String())
 	assert.True(t, ok)
 	assert.Equal(t, c, cps)
 
 	assert.Panics(t, func() {
-		Register(protocol.MOCK.String(), c)
+		Register(redis.Compression_MOCK.String(), c)
 	})
 }

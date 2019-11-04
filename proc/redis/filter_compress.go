@@ -19,9 +19,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/samaritan-proxy/samaritan/pb/config/protocol"
+	"github.com/samaritan-proxy/samaritan/pb/config/protocol/redis"
 	"github.com/samaritan-proxy/samaritan/proc/redis/compressor"
-	_ "github.com/samaritan-proxy/samaritan/proc/redis/compressor/snappy"
+	"github.com/samaritan-proxy/samaritan/proc/redis/compressor/snappy"
 	"github.com/samaritan-proxy/samaritan/stats"
 )
 
@@ -107,25 +107,44 @@ var (
 		"cluster": {},
 		"ping":    {},
 	}
+
+	cpsHdrs = map[redis.Compression_Method][]byte{}
 )
 
-// writeCpsHeader generates compress header from specific compressType
-func writeCpsHeader(typ protocol.RedisOption_Compression_Method, buf buffer) {
-	buf.WriteString(MagicNumber)
-	buf.WriteByte(byte(typ))
-	buf.WriteString(Separator)
+func init() {
+	methods := []redis.Compression_Method{snappy.Name}
+	for _, method := range methods {
+		hdr := make([]byte, cpsHdrLen)
+		copy(hdr, MagicNumber)
+		hdr[len(MagicNumber)+1] = byte(method)
+		copy(hdr[len(MagicNumber)+2:], Separator)
+		cpsHdrs[method] = hdr
+	}
 }
 
-var compress = func(src []byte, typ protocol.RedisOption_Compression_Method) []byte {
+// writeCpsHeader generates compress header from specific compressType
+func writeCpsHeader(typ redis.Compression_Method, buf buffer) {
+	if cpsHdr, ok := cpsHdrs[typ]; ok {
+		buf.Write(cpsHdr)
+	} else {
+		// for test
+		buf.WriteString(MagicNumber)
+		buf.WriteByte(byte(typ))
+		buf.WriteString(Separator)
+	}
+
+}
+
+var compress = func(src []byte, algorithm redis.Compression_Method) []byte {
 	b := newBuffer()
 	defer b.Close()
 
-	w, err := compressor.NewWriter(typ.String(), b)
+	w, err := compressor.NewWriter(algorithm.String(), b)
 	if err != nil {
 		return src
 	}
 
-	writeCpsHeader(typ, b)
+	writeCpsHeader(algorithm, b)
 
 	if _, err := w.Write(src); err != nil {
 		w.Close()
@@ -144,7 +163,7 @@ var compress = func(src []byte, typ protocol.RedisOption_Compression_Method) []b
 }
 
 func getCompressorName(id int32) (string, error) {
-	name, ok := protocol.RedisOption_Compression_Method_name[id]
+	name, ok := redis.Compression_Method_name[id]
 	if !ok {
 		return "", errInvalidCpsType
 	}
@@ -184,7 +203,7 @@ var decompress = func(src []byte) ([]byte, error) {
 	return dst, nil
 }
 
-var defaultCpsFilterBuilder = filterBuilder(new(cpsFilterBuilder))
+var defaultCpsFilterBuilder filterBuilder = filterBuilder(new(cpsFilterBuilder))
 
 type cpsFilterBuilder struct{}
 

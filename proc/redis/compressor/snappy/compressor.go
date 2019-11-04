@@ -21,12 +21,12 @@ import (
 
 	"github.com/golang/snappy"
 
-	"github.com/samaritan-proxy/samaritan/pb/config/protocol"
+	"github.com/samaritan-proxy/samaritan/pb/config/protocol/redis"
 	"github.com/samaritan-proxy/samaritan/proc/redis/compressor"
 )
 
 const (
-	Name = protocol.SNAPPY
+	Name = redis.Compression_SNAPPY
 )
 
 var (
@@ -71,13 +71,13 @@ func (r *reader) Read(p []byte) (n int, err error) {
 
 type snappyCompressor struct{}
 
-func (*snappyCompressor) Compress(w io.Writer) io.WriteCloser {
+func (*snappyCompressor) NewWriter(w io.Writer) io.WriteCloser {
 	tempC := poolCompressor.Get().(*writer)
 	tempC.Writer.Reset(w)
 	return tempC
 }
 
-func (*snappyCompressor) Decompress(r io.Reader) io.Reader {
+func (*snappyCompressor) NewReader(r io.Reader) io.Reader {
 	tempDeC, inPool := poolDecompressor.Get().(*reader)
 	if !inPool {
 		return &reader{

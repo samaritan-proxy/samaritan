@@ -35,6 +35,7 @@ import (
 	"github.com/samaritan-proxy/samaritan/logger"
 	"github.com/samaritan-proxy/samaritan/pb/common"
 	"github.com/samaritan-proxy/samaritan/pb/config/protocol"
+	"github.com/samaritan-proxy/samaritan/pb/config/protocol/redis"
 	"github.com/samaritan-proxy/samaritan/pb/config/service"
 	"github.com/samaritan-proxy/samaritan/proc"
 	_ "github.com/samaritan-proxy/samaritan/proc/redis"
@@ -512,8 +513,8 @@ func setupRedisProxy() {
 		Protocol:       protocol.Redis,
 		ProtocolOptions: &service.Config_RedisOption{
 			RedisOption: &protocol.RedisOption{
-				ReadStrategy: protocol.RedisOption_MASTER,
-				Compression: &protocol.RedisOption_Compression{
+				ReadStrategy: redis.ReadStrategy_MASTER,
+				Compression: &redis.Compression{
 					Enable: false,
 				},
 			},

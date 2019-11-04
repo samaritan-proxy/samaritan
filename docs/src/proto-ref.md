@@ -32,15 +32,21 @@
   
   
 
+- [config/protocol/redis/redis.proto](#config/protocol/redis/redis.proto)
+    - [Compression](#redis.Compression)
+  
+    - [Compression.Method](#redis.Compression.Method)
+    - [ReadStrategy](#redis.ReadStrategy)
+  
+  
+  
+
 - [config/protocol/protocol.proto](#config/protocol/protocol.proto)
     - [MySQLOption](#protocol.MySQLOption)
     - [RedisOption](#protocol.RedisOption)
-    - [RedisOption.Compression](#protocol.RedisOption.Compression)
     - [TCPOption](#protocol.TCPOption)
   
     - [Protocol](#protocol.Protocol)
-    - [RedisOption.Compression.Method](#protocol.RedisOption.Compression.Method)
-    - [RedisOption.ReadStrategy](#protocol.RedisOption.ReadStrategy)
   
   
   
@@ -393,6 +399,65 @@ TCP checker config.
 
 
 
+<a name="config/protocol/redis/redis.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## config/protocol/redis/redis.proto
+
+
+
+<a name="redis.Compression"></a>
+
+### Compression
+Configuration of compression.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| enable | [bool](#bool) |  | Switch of compress, default is off. NOTE: Uncompress will always work. |
+| method | [Compression.Method](#redis.Compression.Method) |  | Compression algorithm used in compression filter. |
+| threshold | [uint32](#uint32) |  | Value will be ignored when byte length of value is less than the threshold, must be greater than 0. |
+
+
+
+
+
+ 
+
+
+<a name="redis.Compression.Method"></a>
+
+### Compression.Method
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| PLAIN | 0 |  |
+| SNAPPY | 1 |  |
+| MOCK | 255 | only for test |
+
+
+
+<a name="redis.ReadStrategy"></a>
+
+### ReadStrategy
+Strategy of a read only command.
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| MASTER | 0 | Read from master nodes. |
+| SLAVE | 1 | Read from slave nodes. |
+| BOTH | 2 | Read from all nodes. |
+
+
+ 
+
+ 
+
+ 
+
+
+
 <a name="config/protocol/protocol.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
@@ -418,25 +483,8 @@ Redis protocol option.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| read_strategy | [RedisOption.ReadStrategy](#protocol.RedisOption.ReadStrategy) |  | Strategy of a read only command. |
-| compression | [RedisOption.Compression](#protocol.RedisOption.Compression) |  |  |
-
-
-
-
-
-
-<a name="protocol.RedisOption.Compression"></a>
-
-### RedisOption.Compression
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| enable | [bool](#bool) |  | Switch of compress, default is off. NOTE: Uncompress will always work. |
-| method | [RedisOption.Compression.Method](#protocol.RedisOption.Compression.Method) |  | Compression algorithm used in compression filter. |
-| threshold | [uint32](#uint32) |  | Value will be ignored when byte length of value is less than the threshold, must be greater than 0. |
+| read_strategy | [redis.ReadStrategy](#redis.ReadStrategy) |  | Strategy of a read only command. |
+| compression | [redis.Compression](#redis.Compression) |  | Configuration of compression. |
 
 
 
@@ -466,32 +514,6 @@ Protocol enum.
 | TCP | 1 | TCP |
 | MySQL | 2 | MySQL |
 | Redis | 3 | Redis |
-
-
-
-<a name="protocol.RedisOption.Compression.Method"></a>
-
-### RedisOption.Compression.Method
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| PLAIN | 0 |  |
-| SNAPPY | 1 |  |
-| MOCK | 255 | only for test |
-
-
-
-<a name="protocol.RedisOption.ReadStrategy"></a>
-
-### RedisOption.ReadStrategy
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| MASTER | 0 | Read from master nodes. |
-| SLAVE | 1 | Read from slave nodes. |
-| BOTH | 2 | Read from all nodes. |
 
 
  

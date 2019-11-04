@@ -20,7 +20,7 @@ import (
 	"io"
 )
 
-//go:generate mockgen -package $GOPACKAGE -destination mock.go $REPO_URI/proc/redis/$GOPACKAGE Compressor
+//go:generate mockgen -package $GOPACKAGE -destination mock.go -source=$GOFILE
 
 var (
 	m = make(map[string]compressor)
@@ -53,7 +53,7 @@ func NewReader(typ string, r io.Reader) (io.Reader, error) {
 	if !ok {
 		return nil, errCompressorNotExist
 	}
-	return c.Decompress(r), nil
+	return c.NewReader(r), nil
 }
 
 // NewWriter return a writer for compressed.
@@ -62,11 +62,11 @@ func NewWriter(typ string, w io.Writer) (io.WriteCloser, error) {
 	if !ok {
 		return nil, errCompressorNotExist
 	}
-	return c.Compress(w), nil
+	return c.NewWriter(w), nil
 }
 
 // compressor is used to compress & decompress values in command
 type compressor interface {
-	Compress(w io.Writer) io.WriteCloser
-	Decompress(r io.Reader) io.Reader
+	NewWriter(w io.Writer) io.WriteCloser
+	NewReader(r io.Reader) io.Reader
 }

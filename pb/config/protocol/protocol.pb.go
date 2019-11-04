@@ -9,6 +9,7 @@ import (
 	_ "github.com/envoyproxy/protoc-gen-validate/validate"
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
+	redis "github.com/samaritan-proxy/samaritan/pb/config/protocol/redis"
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -60,66 +61,6 @@ func (x Protocol) String() string {
 
 func (Protocol) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_024f19dd69f1399f, []int{0}
-}
-
-type RedisOption_ReadStrategy int32
-
-const (
-	// Read from master nodes.
-	RedisOption_MASTER RedisOption_ReadStrategy = 0
-	// Read from slave nodes.
-	RedisOption_SLAVE RedisOption_ReadStrategy = 1
-	// Read from all nodes.
-	RedisOption_BOTH RedisOption_ReadStrategy = 2
-)
-
-var RedisOption_ReadStrategy_name = map[int32]string{
-	0: "MASTER",
-	1: "SLAVE",
-	2: "BOTH",
-}
-
-var RedisOption_ReadStrategy_value = map[string]int32{
-	"MASTER": 0,
-	"SLAVE":  1,
-	"BOTH":   2,
-}
-
-func (x RedisOption_ReadStrategy) String() string {
-	return proto.EnumName(RedisOption_ReadStrategy_name, int32(x))
-}
-
-func (RedisOption_ReadStrategy) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_024f19dd69f1399f, []int{2, 0}
-}
-
-type RedisOption_Compression_Method int32
-
-const (
-	PLAIN  RedisOption_Compression_Method = 0
-	SNAPPY RedisOption_Compression_Method = 1
-	// only for test
-	MOCK RedisOption_Compression_Method = 255
-)
-
-var RedisOption_Compression_Method_name = map[int32]string{
-	0:   "PLAIN",
-	1:   "SNAPPY",
-	255: "MOCK",
-}
-
-var RedisOption_Compression_Method_value = map[string]int32{
-	"PLAIN":  0,
-	"SNAPPY": 1,
-	"MOCK":   255,
-}
-
-func (x RedisOption_Compression_Method) String() string {
-	return proto.EnumName(RedisOption_Compression_Method_name, int32(x))
-}
-
-func (RedisOption_Compression_Method) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_024f19dd69f1399f, []int{2, 0, 0}
 }
 
 // MySQL protocol option.
@@ -205,11 +146,12 @@ var xxx_messageInfo_TCPOption proto.InternalMessageInfo
 // Redis protocol option.
 type RedisOption struct {
 	// Strategy of a read only command.
-	ReadStrategy         RedisOption_ReadStrategy `protobuf:"varint,1,opt,name=read_strategy,json=readStrategy,proto3,enum=protocol.RedisOption_ReadStrategy" json:"read_strategy,omitempty"`
-	Compression          *RedisOption_Compression `protobuf:"bytes,2,opt,name=compression,proto3" json:"compression,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}                 `json:"-"`
-	XXX_unrecognized     []byte                   `json:"-"`
-	XXX_sizecache        int32                    `json:"-"`
+	ReadStrategy redis.ReadStrategy `protobuf:"varint,1,opt,name=read_strategy,json=readStrategy,proto3,enum=redis.ReadStrategy" json:"read_strategy,omitempty"`
+	// Configuration of compression.
+	Compression          *redis.Compression `protobuf:"bytes,2,opt,name=compression,proto3" json:"compression,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}           `json:"-"`
+	XXX_unrecognized     []byte             `json:"-"`
+	XXX_sizecache        int32              `json:"-"`
 }
 
 func (m *RedisOption) Reset()         { *m = RedisOption{} }
@@ -245,132 +187,52 @@ func (m *RedisOption) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_RedisOption proto.InternalMessageInfo
 
-func (m *RedisOption) GetReadStrategy() RedisOption_ReadStrategy {
+func (m *RedisOption) GetReadStrategy() redis.ReadStrategy {
 	if m != nil {
 		return m.ReadStrategy
 	}
-	return RedisOption_MASTER
+	return redis.ReadStrategy_MASTER
 }
 
-func (m *RedisOption) GetCompression() *RedisOption_Compression {
+func (m *RedisOption) GetCompression() *redis.Compression {
 	if m != nil {
 		return m.Compression
 	}
 	return nil
 }
 
-type RedisOption_Compression struct {
-	// Switch of compress, default is off.
-	// NOTE: Uncompress will always work.
-	Enable bool `protobuf:"varint,1,opt,name=enable,proto3" json:"enable,omitempty"`
-	// Compression algorithm used in compression filter.
-	Method RedisOption_Compression_Method `protobuf:"varint,2,opt,name=method,proto3,enum=protocol.RedisOption_Compression_Method" json:"method,omitempty"`
-	// Value will be ignored when byte length of value is less than the
-	// threshold, must be greater than 0.
-	Threshold            uint32   `protobuf:"varint,3,opt,name=threshold,proto3" json:"threshold,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *RedisOption_Compression) Reset()         { *m = RedisOption_Compression{} }
-func (m *RedisOption_Compression) String() string { return proto.CompactTextString(m) }
-func (*RedisOption_Compression) ProtoMessage()    {}
-func (*RedisOption_Compression) Descriptor() ([]byte, []int) {
-	return fileDescriptor_024f19dd69f1399f, []int{2, 0}
-}
-func (m *RedisOption_Compression) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *RedisOption_Compression) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_RedisOption_Compression.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *RedisOption_Compression) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_RedisOption_Compression.Merge(m, src)
-}
-func (m *RedisOption_Compression) XXX_Size() int {
-	return m.Size()
-}
-func (m *RedisOption_Compression) XXX_DiscardUnknown() {
-	xxx_messageInfo_RedisOption_Compression.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_RedisOption_Compression proto.InternalMessageInfo
-
-func (m *RedisOption_Compression) GetEnable() bool {
-	if m != nil {
-		return m.Enable
-	}
-	return false
-}
-
-func (m *RedisOption_Compression) GetMethod() RedisOption_Compression_Method {
-	if m != nil {
-		return m.Method
-	}
-	return PLAIN
-}
-
-func (m *RedisOption_Compression) GetThreshold() uint32 {
-	if m != nil {
-		return m.Threshold
-	}
-	return 0
-}
-
 func init() {
 	proto.RegisterEnum("protocol.Protocol", Protocol_name, Protocol_value)
-	proto.RegisterEnum("protocol.RedisOption_ReadStrategy", RedisOption_ReadStrategy_name, RedisOption_ReadStrategy_value)
-	proto.RegisterEnum("protocol.RedisOption_Compression_Method", RedisOption_Compression_Method_name, RedisOption_Compression_Method_value)
 	proto.RegisterType((*MySQLOption)(nil), "protocol.MySQLOption")
 	proto.RegisterType((*TCPOption)(nil), "protocol.TCPOption")
 	proto.RegisterType((*RedisOption)(nil), "protocol.RedisOption")
-	proto.RegisterType((*RedisOption_Compression)(nil), "protocol.RedisOption.Compression")
 }
 
 func init() { proto.RegisterFile("config/protocol/protocol.proto", fileDescriptor_024f19dd69f1399f) }
 
 var fileDescriptor_024f19dd69f1399f = []byte{
-	// 466 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x84, 0x92, 0xcd, 0x8e, 0x93, 0x5e,
-	0x18, 0xc6, 0x39, 0x85, 0x32, 0xf0, 0x32, 0x9d, 0x90, 0x93, 0x7f, 0xfe, 0x36, 0x5d, 0x9c, 0x54,
-	0x36, 0x36, 0x93, 0x08, 0xa6, 0x2e, 0xdc, 0xb8, 0xb0, 0x25, 0x13, 0x3f, 0xa6, 0x1f, 0x08, 0x55,
-	0x33, 0x6e, 0x0c, 0x2d, 0x47, 0x4a, 0xd2, 0x72, 0x08, 0xa0, 0xb1, 0x77, 0xe0, 0x1d, 0x78, 0x01,
-	0x6e, 0xbc, 0x06, 0x57, 0xc6, 0x95, 0x4b, 0x2f, 0x61, 0x86, 0x95, 0xee, 0xe6, 0x0e, 0x34, 0x1c,
-	0x98, 0x29, 0x31, 0x26, 0xee, 0x9e, 0x5f, 0x9e, 0xe7, 0x3d, 0xcf, 0x79, 0xe1, 0x00, 0x59, 0xb1,
-	0xf8, 0x75, 0x14, 0x5a, 0x49, 0xca, 0x72, 0xb6, 0x62, 0x9b, 0x6b, 0x61, 0x72, 0x81, 0x95, 0x2b,
-	0xee, 0xfd, 0x17, 0xb2, 0x90, 0x71, 0xb2, 0x4a, 0x55, 0xf9, 0xbd, 0x1b, 0x6f, 0xfd, 0x4d, 0x14,
-	0xf8, 0x39, 0xb5, 0xae, 0x44, 0x65, 0x18, 0x1d, 0xd0, 0xa6, 0x3b, 0xef, 0xe9, 0x64, 0x9e, 0xe4,
-	0x11, 0x8b, 0x0d, 0x0d, 0xd4, 0x85, 0xed, 0xd4, 0xf0, 0x41, 0x04, 0xcd, 0xa5, 0x41, 0x94, 0x55,
-	0x8c, 0x1f, 0x42, 0x27, 0xa5, 0x7e, 0xf0, 0x2a, 0xcb, 0x53, 0x3f, 0xa7, 0xe1, 0xae, 0x8b, 0xfa,
-	0x68, 0x70, 0x34, 0x34, 0xcc, 0xeb, 0xcb, 0x34, 0xd2, 0xa6, 0x4b, 0xfd, 0xc0, 0xab, 0x93, 0xee,
-	0x61, 0xda, 0x20, 0x6c, 0x83, 0xb6, 0x62, 0xdb, 0x24, 0xa5, 0x59, 0x16, 0xb1, 0xb8, 0xdb, 0xea,
-	0xa3, 0x81, 0x36, 0xbc, 0xf9, 0xf7, 0x63, 0xec, 0x7d, 0xd0, 0x6d, 0x4e, 0xf5, 0xbe, 0x22, 0xd0,
-	0x1a, 0x26, 0xfe, 0x1f, 0x64, 0x1a, 0xfb, 0xcb, 0x0d, 0xe5, 0xd7, 0x52, 0xdc, 0x9a, 0xf0, 0x03,
-	0x90, 0xb7, 0x34, 0x5f, 0xb3, 0x80, 0xf7, 0x1c, 0x0d, 0x07, 0xff, 0xec, 0x31, 0xa7, 0x3c, 0xef,
-	0xd6, 0x73, 0xf8, 0x16, 0xa8, 0xf9, 0x3a, 0xa5, 0xd9, 0x9a, 0x6d, 0x82, 0xae, 0xd8, 0x47, 0x83,
-	0xce, 0x58, 0xfd, 0xfc, 0xf3, 0x8b, 0x28, 0x1d, 0xb7, 0xfa, 0x82, 0xbb, 0xf7, 0x8c, 0x3b, 0x20,
-	0x57, 0xa3, 0x58, 0x85, 0xb6, 0x33, 0x19, 0x3d, 0x9e, 0xe9, 0x02, 0x06, 0x90, 0xbd, 0xd9, 0xc8,
-	0x71, 0xce, 0x74, 0x84, 0x55, 0x90, 0xa6, 0x73, 0xfb, 0x54, 0xff, 0x85, 0x7a, 0xd2, 0xfb, 0x8f,
-	0x44, 0x30, 0x2c, 0x38, 0x6c, 0x7e, 0xa7, 0x32, 0x3c, 0x1d, 0x79, 0x8b, 0x13, 0x57, 0x17, 0xca,
-	0x33, 0xbc, 0xc9, 0xe8, 0xf9, 0x89, 0x8e, 0xb0, 0x02, 0xd2, 0x78, 0xbe, 0x78, 0xa4, 0xb7, 0x9e,
-	0x48, 0x8a, 0xa8, 0xb7, 0x8f, 0xef, 0x83, 0xe2, 0xd4, 0x4b, 0x60, 0x0d, 0x0e, 0x9e, 0xcd, 0x4e,
-	0x67, 0xf3, 0x17, 0x65, 0xd9, 0x01, 0x88, 0x0b, 0xdb, 0xe1, 0x4d, 0x6d, 0xfe, 0x5f, 0xf5, 0x56,
-	0x29, 0xf9, 0xa2, 0xba, 0x58, 0x95, 0x8e, 0xcf, 0xce, 0x2f, 0x08, 0xba, 0xbc, 0x20, 0xe8, 0x53,
-	0x41, 0xd0, 0xb7, 0x82, 0xa0, 0xef, 0x05, 0x41, 0xe7, 0x05, 0x41, 0x3f, 0x0a, 0x82, 0x2e, 0x0b,
-	0x22, 0xbc, 0xbc, 0x17, 0x46, 0xf9, 0xfa, 0xcd, 0xd2, 0x5c, 0xb1, 0xad, 0x95, 0xf9, 0x5b, 0x3f,
-	0x8d, 0x72, 0x3f, 0xbe, 0x9d, 0xa4, 0xec, 0xdd, 0x6e, 0xcf, 0x56, 0xb2, 0xb4, 0xfe, 0x78, 0x96,
-	0x4b, 0x99, 0xab, 0xbb, 0xbf, 0x03, 0x00, 0x00, 0xff, 0xff, 0xb2, 0xf6, 0x7e, 0x27, 0xb0, 0x02,
-	0x00, 0x00,
+	// 324 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x92, 0x4b, 0xce, 0xcf, 0x4b,
+	0xcb, 0x4c, 0xd7, 0x2f, 0x28, 0xca, 0x2f, 0xc9, 0x4f, 0xce, 0xcf, 0x81, 0x33, 0xf4, 0xc0, 0x0c,
+	0x21, 0x0e, 0x18, 0x5f, 0x4a, 0x24, 0x3d, 0x3f, 0x3d, 0x1f, 0xcc, 0xd3, 0x07, 0xb1, 0x20, 0xf2,
+	0x52, 0xe2, 0x65, 0x89, 0x39, 0x99, 0x29, 0x89, 0x25, 0xa9, 0xfa, 0x30, 0x06, 0x54, 0x42, 0x11,
+	0xdd, 0xe0, 0xa2, 0xd4, 0x94, 0xcc, 0x62, 0x08, 0x09, 0x51, 0xa2, 0xc4, 0xcb, 0xc5, 0xed, 0x5b,
+	0x19, 0x1c, 0xe8, 0xe3, 0x5f, 0x50, 0x92, 0x99, 0x9f, 0xa7, 0xc4, 0xcd, 0xc5, 0x19, 0xe2, 0x1c,
+	0x00, 0xe5, 0x34, 0x33, 0x72, 0x71, 0x07, 0x81, 0xd4, 0x42, 0xf8, 0x42, 0x16, 0x5c, 0xbc, 0x45,
+	0xa9, 0x89, 0x29, 0xf1, 0xc5, 0x25, 0x45, 0x89, 0x25, 0xa9, 0xe9, 0x95, 0x12, 0x8c, 0x0a, 0x8c,
+	0x1a, 0x7c, 0x46, 0xc2, 0x7a, 0x10, 0x03, 0x83, 0x52, 0x13, 0x53, 0x82, 0xa1, 0x52, 0x41, 0x3c,
+	0x45, 0x48, 0x3c, 0x21, 0x13, 0x2e, 0xee, 0xe4, 0xfc, 0xdc, 0x82, 0xa2, 0xd4, 0xe2, 0xe2, 0xcc,
+	0xfc, 0x3c, 0x09, 0x26, 0x05, 0x46, 0x0d, 0x6e, 0x23, 0x21, 0xa8, 0x3e, 0x67, 0x84, 0x4c, 0x10,
+	0xb2, 0x32, 0x2f, 0x16, 0x0e, 0x66, 0x01, 0x56, 0x2d, 0x1b, 0x2e, 0x8e, 0x00, 0xa8, 0xfb, 0x85,
+	0xb8, 0xb9, 0xd8, 0x43, 0xfd, 0xbc, 0xfd, 0xfc, 0xc3, 0xfd, 0x04, 0x18, 0x84, 0xd8, 0xb9, 0x98,
+	0x43, 0x9c, 0x03, 0x04, 0x18, 0x85, 0x38, 0xb9, 0x58, 0xc1, 0x7e, 0x10, 0x60, 0x02, 0x31, 0xc1,
+	0x2e, 0x16, 0x60, 0x96, 0x62, 0xe9, 0x58, 0x2c, 0xc7, 0xe0, 0x14, 0xf9, 0xe0, 0xa1, 0x1c, 0xe3,
+	0x87, 0x87, 0x72, 0x8c, 0x2b, 0x1e, 0xc9, 0x31, 0x9e, 0x78, 0x24, 0xc7, 0x78, 0xe1, 0x91, 0x1c,
+	0xe3, 0x83, 0x47, 0x72, 0x8c, 0x2f, 0x1e, 0xc9, 0x31, 0x7e, 0x78, 0x24, 0xc7, 0x10, 0x65, 0x9e,
+	0x9e, 0x59, 0x92, 0x51, 0x9a, 0xa4, 0x97, 0x9c, 0x9f, 0xab, 0x5f, 0x9c, 0x98, 0x9b, 0x58, 0x94,
+	0x59, 0x92, 0x98, 0xa7, 0x5b, 0x50, 0x94, 0x5f, 0x51, 0x89, 0xe0, 0xeb, 0x17, 0x24, 0xe9, 0xa3,
+	0x05, 0x66, 0x12, 0x1b, 0x98, 0x65, 0x0c, 0x08, 0x00, 0x00, 0xff, 0xff, 0xb4, 0x13, 0xb6, 0x2b,
+	0xbf, 0x01, 0x00, 0x00,
 }
 
 func (this *MySQLOption) VerboseEqual(that interface{}) error {
@@ -547,78 +409,6 @@ func (this *RedisOption) Equal(that interface{}) bool {
 	}
 	return true
 }
-func (this *RedisOption_Compression) VerboseEqual(that interface{}) error {
-	if that == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that == nil && this != nil")
-	}
-
-	that1, ok := that.(*RedisOption_Compression)
-	if !ok {
-		that2, ok := that.(RedisOption_Compression)
-		if ok {
-			that1 = &that2
-		} else {
-			return fmt.Errorf("that is not of type *RedisOption_Compression")
-		}
-	}
-	if that1 == nil {
-		if this == nil {
-			return nil
-		}
-		return fmt.Errorf("that is type *RedisOption_Compression but is nil && this != nil")
-	} else if this == nil {
-		return fmt.Errorf("that is type *RedisOption_Compression but is not nil && this == nil")
-	}
-	if this.Enable != that1.Enable {
-		return fmt.Errorf("Enable this(%v) Not Equal that(%v)", this.Enable, that1.Enable)
-	}
-	if this.Method != that1.Method {
-		return fmt.Errorf("Method this(%v) Not Equal that(%v)", this.Method, that1.Method)
-	}
-	if this.Threshold != that1.Threshold {
-		return fmt.Errorf("Threshold this(%v) Not Equal that(%v)", this.Threshold, that1.Threshold)
-	}
-	if !bytes.Equal(this.XXX_unrecognized, that1.XXX_unrecognized) {
-		return fmt.Errorf("XXX_unrecognized this(%v) Not Equal that(%v)", this.XXX_unrecognized, that1.XXX_unrecognized)
-	}
-	return nil
-}
-func (this *RedisOption_Compression) Equal(that interface{}) bool {
-	if that == nil {
-		return this == nil
-	}
-
-	that1, ok := that.(*RedisOption_Compression)
-	if !ok {
-		that2, ok := that.(RedisOption_Compression)
-		if ok {
-			that1 = &that2
-		} else {
-			return false
-		}
-	}
-	if that1 == nil {
-		return this == nil
-	} else if this == nil {
-		return false
-	}
-	if this.Enable != that1.Enable {
-		return false
-	}
-	if this.Method != that1.Method {
-		return false
-	}
-	if this.Threshold != that1.Threshold {
-		return false
-	}
-	if !bytes.Equal(this.XXX_unrecognized, that1.XXX_unrecognized) {
-		return false
-	}
-	return true
-}
 func (this *MySQLOption) GoString() string {
 	if this == nil {
 		return "nil"
@@ -653,21 +443,6 @@ func (this *RedisOption) GoString() string {
 	if this.Compression != nil {
 		s = append(s, "Compression: "+fmt.Sprintf("%#v", this.Compression)+",\n")
 	}
-	if this.XXX_unrecognized != nil {
-		s = append(s, "XXX_unrecognized:"+fmt.Sprintf("%#v", this.XXX_unrecognized)+",\n")
-	}
-	s = append(s, "}")
-	return strings.Join(s, "")
-}
-func (this *RedisOption_Compression) GoString() string {
-	if this == nil {
-		return "nil"
-	}
-	s := make([]string, 0, 7)
-	s = append(s, "&protocol.RedisOption_Compression{")
-	s = append(s, "Enable: "+fmt.Sprintf("%#v", this.Enable)+",\n")
-	s = append(s, "Method: "+fmt.Sprintf("%#v", this.Method)+",\n")
-	s = append(s, "Threshold: "+fmt.Sprintf("%#v", this.Threshold)+",\n")
 	if this.XXX_unrecognized != nil {
 		s = append(s, "XXX_unrecognized:"+fmt.Sprintf("%#v", this.XXX_unrecognized)+",\n")
 	}
@@ -780,53 +555,6 @@ func (m *RedisOption) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *RedisOption_Compression) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *RedisOption_Compression) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *RedisOption_Compression) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if m.Threshold != 0 {
-		i = encodeVarintProtocol(dAtA, i, uint64(m.Threshold))
-		i--
-		dAtA[i] = 0x18
-	}
-	if m.Method != 0 {
-		i = encodeVarintProtocol(dAtA, i, uint64(m.Method))
-		i--
-		dAtA[i] = 0x10
-	}
-	if m.Enable {
-		i--
-		if m.Enable {
-			dAtA[i] = 1
-		} else {
-			dAtA[i] = 0
-		}
-		i--
-		dAtA[i] = 0x8
-	}
-	return len(dAtA) - i, nil
-}
-
 func encodeVarintProtocol(dAtA []byte, offset int, v uint64) int {
 	offset -= sovProtocol(v)
 	base := offset
@@ -874,27 +602,6 @@ func (m *RedisOption) Size() (n int) {
 	if m.Compression != nil {
 		l = m.Compression.Size()
 		n += 1 + l + sovProtocol(uint64(l))
-	}
-	if m.XXX_unrecognized != nil {
-		n += len(m.XXX_unrecognized)
-	}
-	return n
-}
-
-func (m *RedisOption_Compression) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if m.Enable {
-		n += 2
-	}
-	if m.Method != 0 {
-		n += 1 + sovProtocol(uint64(m.Method))
-	}
-	if m.Threshold != 0 {
-		n += 1 + sovProtocol(uint64(m.Threshold))
 	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
@@ -1059,7 +766,7 @@ func (m *RedisOption) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.ReadStrategy |= RedisOption_ReadStrategy(b&0x7F) << shift
+				m.ReadStrategy |= redis.ReadStrategy(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -1094,124 +801,12 @@ func (m *RedisOption) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Compression == nil {
-				m.Compression = &RedisOption_Compression{}
+				m.Compression = &redis.Compression{}
 			}
 			if err := m.Compression.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipProtocol(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if skippy < 0 {
-				return ErrInvalidLengthProtocol
-			}
-			if (iNdEx + skippy) < 0 {
-				return ErrInvalidLengthProtocol
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *RedisOption_Compression) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowProtocol
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: Compression: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: Compression: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Enable", wireType)
-			}
-			var v int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowProtocol
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				v |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			m.Enable = bool(v != 0)
-		case 2:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Method", wireType)
-			}
-			m.Method = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowProtocol
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.Method |= RedisOption_Compression_Method(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 3:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Threshold", wireType)
-			}
-			m.Threshold = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowProtocol
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.Threshold |= uint32(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skipProtocol(dAtA[iNdEx:])
