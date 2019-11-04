@@ -432,9 +432,8 @@ Configuration of compression.
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| PLAIN | 0 |  |
-| SNAPPY | 1 |  |
-| MOCK | 255 | only for test |
+| SNAPPY | 0 |  |
+| MOCK | 255 |  |
 
 
 

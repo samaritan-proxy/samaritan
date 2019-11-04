@@ -574,37 +574,45 @@ func TestMain(m *testing.M) {
 		addr, _ := net.ResolveTCPAddr("tcp4", fmt.Sprintf("127.0.0.1:%d", port))
 		nodes = append(nodes, addr)
 	}
-	testWithNewCluster := func(fn func()) {
+
+	for _, test := range []struct {
+		Before, After func()
+	}{
+		{
+			Before: nil,
+			After:  nil,
+		},
+		{
+			Before: func() {
+				setCompress(true, 1)
+			},
+			After: func() {
+				setCompress(false, 1)
+			},
+		},
+	} {
+
 		if err := defaultClusterManager.Start(nodes...); err != nil {
 			logger.Fatal(err)
 		}
-		defer func() {
-			if err := defaultClusterManager.Shutdown(); err != nil {
-				log.Fatalf("failed to shutdown cluster manager, err: %v", err)
-			}
-		}()
+		setupRedisProxy()
 		initRedisClient()
-		defer func() {
-			if err := c.Close(); err != nil {
-				log.Fatalf("failed to close redis client, err: %v", err)
-			}
-		}()
-		fn()
+		if test.Before != nil {
+			test.Before()
+		}
+		code := m.Run()
+		if test.After != nil {
+			test.After()
+		}
+		if err := c.Close(); err != nil {
+			log.Fatalf("failed to close redis client, err: %v", err)
+		}
+		processor.Stop()
+		if err := defaultClusterManager.Shutdown(); err != nil {
+			log.Fatalf("failed to shutdown cluster manager, err: %v", err)
+		}
+		if code != 0 {
+			os.Exit(code)
+		}
 	}
-
-	setupRedisProxy()
-
-	var code = 0
-	defer os.Exit(code)
-	testWithNewCluster(func() {
-		code = m.Run()
-	})
-	if code != 0 {
-		return
-	}
-
-	setCompress(true, 1)
-	testWithNewCluster(func() {
-		code = m.Run()
-	})
 }

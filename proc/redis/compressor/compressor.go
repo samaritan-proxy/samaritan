@@ -25,7 +25,7 @@ import (
 var (
 	m = make(map[string]compressor)
 
-	errCompressorNotExist = errors.New("compressor not exist")
+	errUnsupportedAlgorithm = errors.New("compressor not exist")
 )
 
 // Register registers the compressor builder
@@ -51,7 +51,7 @@ func get(typ string) (compressor, bool) {
 func NewReader(typ string, r io.Reader) (io.Reader, error) {
 	c, ok := get(typ)
 	if !ok {
-		return nil, errCompressorNotExist
+		return nil, errUnsupportedAlgorithm
 	}
 	return c.NewReader(r), nil
 }
@@ -60,7 +60,7 @@ func NewReader(typ string, r io.Reader) (io.Reader, error) {
 func NewWriter(typ string, w io.Writer) (io.WriteCloser, error) {
 	c, ok := get(typ)
 	if !ok {
-		return nil, errCompressorNotExist
+		return nil, errUnsupportedAlgorithm
 	}
 	return c.NewWriter(w), nil
 }

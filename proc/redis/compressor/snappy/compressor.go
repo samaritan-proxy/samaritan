@@ -71,13 +71,13 @@ func (r *reader) Read(p []byte) (n int, err error) {
 
 type snappyCompressor struct{}
 
-func (*snappyCompressor) NewWriter(w io.Writer) io.WriteCloser {
+func (snappyCompressor) NewWriter(w io.Writer) io.WriteCloser {
 	tempC := poolCompressor.Get().(*writer)
 	tempC.Writer.Reset(w)
 	return tempC
 }
 
-func (*snappyCompressor) NewReader(r io.Reader) io.Reader {
+func (snappyCompressor) NewReader(r io.Reader) io.Reader {
 	tempDeC, inPool := poolDecompressor.Get().(*reader)
 	if !inPool {
 		return &reader{

@@ -46,12 +46,10 @@ message Compression {
     bool enable = 1;
 
     enum Method {
-        PLAIN = 0;
+        SNAPPY = 0;
 
-        SNAPPY = 1;
-
-        // only for test
         MOCK = 255;
+
     }
     // Compression algorithm used in compression filter.
     Method method = 2;

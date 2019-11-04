@@ -112,27 +112,19 @@ var (
 )
 
 func init() {
-	methods := []redis.Compression_Method{snappy.Name}
+	methods := []redis.Compression_Method{snappy.Name, redis.Compression_MOCK}
 	for _, method := range methods {
 		hdr := make([]byte, cpsHdrLen)
 		copy(hdr, MagicNumber)
-		hdr[len(MagicNumber)+1] = byte(method)
-		copy(hdr[len(MagicNumber)+2:], Separator)
+		hdr[len(MagicNumber)] = byte(method)
+		copy(hdr[len(MagicNumber)+1:], Separator)
 		cpsHdrs[method] = hdr
 	}
 }
 
 // writeCpsHeader generates compress header from specific compressType
 func writeCpsHeader(typ redis.Compression_Method, buf buffer) {
-	if cpsHdr, ok := cpsHdrs[typ]; ok {
-		buf.Write(cpsHdr)
-	} else {
-		// for test
-		buf.WriteString(MagicNumber)
-		buf.WriteByte(byte(typ))
-		buf.WriteString(Separator)
-	}
-
+	buf.Write(cpsHdrs[typ])
 }
 
 var compress = func(src []byte, algorithm redis.Compression_Method) []byte {
