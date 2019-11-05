@@ -31,30 +31,29 @@ option (gogoproto.unmarshaler_all) = true;
 
 // Strategy of a read only command.
 enum ReadStrategy {
-    // Read from master nodes.
-    MASTER = 0;
-    // Read from slave nodes.
-    SLAVE = 1;
-    // Read from all nodes.
-    BOTH = 2;
+  // Read from master nodes.
+  MASTER = 0;
+  // Read from slave nodes.
+  SLAVE = 1;
+  // Read from all nodes.
+  BOTH = 2;
 }
 
 // Configuration of compression.
 message Compression {
-    // Switch of compress, default is off.
-    // NOTE: Uncompress will always work.
-    bool enable = 1;
+  // Switch of compress, default is off.
+  // NOTE: Uncompress will always work.
+  bool enable = 1;
 
-    enum Method {
-        SNAPPY = 0;
+  enum Method {
+    SNAPPY = 0;
 
-        MOCK = 255;
+    MOCK = 255;
+  }
+  // Compression algorithm used in compression filter.
+  Method method = 2 [ (validate.rules).enum = {in : [ 0, 254 ]} ];
 
-    }
-    // Compression algorithm used in compression filter.
-    Method method = 2;
-
-    // Value will be ignored when byte length of value is less than the
-    // threshold, must be greater than 0.
-    uint32 threshold = 3 [ (validate.rules).uint32 = {gt : 0} ];
+  // Value will be ignored when byte length of value is less than the
+  // threshold, must be greater than 0.
+  uint32 threshold = 3 [ (validate.rules).uint32 = {gt : 0} ];
 }

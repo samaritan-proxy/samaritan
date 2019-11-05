@@ -46,7 +46,7 @@ compressed data, the following diagram depicts the protocol:
 `echo -n $(redis-cli -h ${BACKEND_HOST} GET TEST_KEY) | xxd`
 
 ```text
-00000000: 2850 2401 0d0a ff06 0000 734e 6150 7059  (P$.......sNaPpY
+00000000: 2850 2400 0d0a ff06 0000 734e 6150 7059  (P$.......sNaPpY
 00000010: 000d 0000 faca b4a7 5e00 30fe 0100 7201  ........^.0...r.
 00000020: 00                                       .
 ```
@@ -85,7 +85,10 @@ Other commands are not processed and passed directly to the backend.
 
 ## Compress Algorithm
 
-- 1: [snappy](http://google.github.io/snappy/)
+!!! note
+    The `algorithm` in the `header` is a `byte` not a `string`.
+
+- 0: [snappy](http://google.github.io/snappy/)
 
 - 255: mock, only for unit test
 

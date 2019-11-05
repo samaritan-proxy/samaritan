@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -228,16 +229,12 @@ func genCompressedData(t *testing.T, method interface{}, data interface{}) []byt
 	buf.WriteString(MagicNumber)
 
 	switch m := method.(type) {
-	case int:
-		buf.WriteByte(byte(m))
-	case int32:
-		buf.WriteByte(byte(m))
 	case byte:
 		buf.WriteByte(m)
 	case redis.Compression_Method:
 		buf.WriteByte(byte(m))
 	default:
-		t.Fatalf("unexpected type of method")
+		t.Fatalf("unexpected type of method: %s", reflect.TypeOf(method).String())
 	}
 
 	buf.WriteString(Separator)
@@ -275,11 +272,11 @@ func TestDecompressResp(t *testing.T) {
 		{
 			Input: newByteArray(
 				// unknown compress method
-				genCompressedData(t, 0xfd, "hello"),
+				genCompressedData(t, byte(0xfd), "hello"),
 				genCompressedData(t, redis.Compression_MOCK, "hello"),
 			),
 			Expect: newByteArray(
-				genCompressedData(t, 0xfd, "hello"),
+				genCompressedData(t, byte(0xfd), "hello"),
 				[]byte{0, 0, 0, 1},
 			),
 		},
@@ -303,8 +300,8 @@ func TestDecompressResp(t *testing.T) {
 		},
 		{
 			// unknown compress method
-			Input:  newSimpleBytes(genCompressedData(t, 0xfd, "hello")),
-			Expect: newSimpleBytes(genCompressedData(t, 0xfd, "hello")),
+			Input:  newSimpleBytes(genCompressedData(t, byte(0xfd), "hello")),
+			Expect: newSimpleBytes(genCompressedData(t, byte(0xfd), "hello")),
 		},
 		{
 			// uncompress error

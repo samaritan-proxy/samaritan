@@ -576,13 +576,16 @@ func TestMain(m *testing.M) {
 	}
 
 	for _, test := range []struct {
+		Name          string
 		Before, After func()
 	}{
 		{
+			Name:   "simple",
 			Before: nil,
 			After:  nil,
 		},
 		{
+			Name: "compress",
 			Before: func() {
 				setCompress(true, 1)
 			},
@@ -612,7 +615,7 @@ func TestMain(m *testing.M) {
 			log.Fatalf("failed to shutdown cluster manager, err: %v", err)
 		}
 		if code != 0 {
-			os.Exit(code)
+			log.Fatalf("case: %s, failed", test.Name)
 		}
 	}
 }
