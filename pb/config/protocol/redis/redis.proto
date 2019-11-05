@@ -49,6 +49,8 @@ message Compression {
     SNAPPY = 0;
 
     MOCK = 255;
+
+    reserved 256 to max;
   }
   // Compression algorithm used in compression filter.
   Method method = 2 [ (validate.rules).enum = {in : [ 0, 254 ]} ];

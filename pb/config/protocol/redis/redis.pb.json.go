@@ -2,7 +2,6 @@
 // source: config/protocol/redis/redis.proto
 
 package redis
-
 import (
 	"bytes"
 	"encoding/json"
@@ -13,7 +12,6 @@ import (
 // instances of Compression. This struct is safe to replace or modify but
 // should not be done so concurrently.
 var CompressionJSONMarshaler = new(jsonpb.Marshaler)
-
 // MarshalJSON satisfies the encoding/json Marshaler interface. This method
 // uses the more correct jsonpb package to correctly marshal the message.
 func (m *Compression) MarshalJSON() ([]byte, error) {
@@ -22,22 +20,19 @@ func (m *Compression) MarshalJSON() ([]byte, error) {
 	}
 	buf := &bytes.Buffer{}
 	if err := CompressionJSONMarshaler.Marshal(buf, m); err != nil {
-		return nil, err
+	  return nil, err
 	}
 	return buf.Bytes(), nil
 }
-
 var _ json.Marshaler = (*Compression)(nil)
-
 // CompressionJSONUnmarshaler describes the default jsonpb.Unmarshaler used by all
 // instances of Compression. This struct is safe to replace or modify but
 // should not be done so concurrently.
 var CompressionJSONUnmarshaler = new(jsonpb.Unmarshaler)
-
 // UnmarshalJSON satisfies the encoding/json Unmarshaler interface. This method
 // uses the more correct jsonpb package to correctly unmarshal the message.
 func (m *Compression) UnmarshalJSON(b []byte) error {
 	return CompressionJSONUnmarshaler.Unmarshal(bytes.NewReader(b), m)
 }
-
 var _ json.Unmarshaler = (*Compression)(nil)
+

@@ -610,7 +610,9 @@ func TestMain(m *testing.M) {
 		if err := c.Close(); err != nil {
 			log.Fatalf("failed to close redis client, err: %v", err)
 		}
-		processor.Stop()
+		if err := processor.Stop(); err != nil {
+			log.Fatalf("failed to stop processor, err: %v", err)
+		}
 		if err := defaultClusterManager.Shutdown(); err != nil {
 			log.Fatalf("failed to shutdown cluster manager, err: %v", err)
 		}
