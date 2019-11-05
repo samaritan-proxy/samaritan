@@ -24,7 +24,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/samaritan-proxy/samaritan/pb/config/service"
 	"github.com/samaritan-proxy/samaritan/host"
 	"github.com/samaritan-proxy/samaritan/proc"
 	"github.com/samaritan-proxy/samaritan/proc/internal/log"
@@ -58,7 +57,6 @@ type upstream struct {
 	logger log.Logger
 	stats  *proc.UpstreamStats
 	hosts  *host.Set
-	svcCfg *service.Config
 
 	clients           atomic.Value // map[string]*client
 	clientsMu         sync.Mutex
@@ -217,7 +215,7 @@ func (u *upstream) createClient(addr string) (*client, error) {
 	if err != nil {
 		return nil, err
 	}
-	c, err = newClient(conn, u.svcCfg, u.logger)
+	c, err = newClient(conn, u.cfg, u.logger)
 	if err != nil {
 		return nil, err
 	}
@@ -453,7 +451,28 @@ type client struct {
 	done     chan struct{}
 }
 
+func buildFilterChan(svcCfg *config, logger log.Logger) (*FilterChain, error) {
+	chain := newRequestFilterChain()
+	p := filterBuildParams{
+		Config: svcCfg,
+		// TODO: set stats
+	}
+	cpsFilter, err := defaultCpsFilterBuilder.Build(p)
+	if err != nil {
+		return nil, err
+	}
+	if err := chain.AddFilter(cpsFilter); err != nil {
+		return nil, err
+	}
+	return chain, nil
+}
+
 func newClient(conn net.Conn, cfg *config, logger log.Logger) (*client, error) {
+	filter, err := buildFilterChan(cfg, logger)
+	if err != nil {
+		return nil, err
+	}
+
 	c := &client{
 		cfg:            cfg,
 		logger:         logger,
@@ -462,7 +481,7 @@ func newClient(conn net.Conn, cfg *config, logger log.Logger) (*client, error) {
 		dec:            newDecoder(conn, 8192),
 		pendingReqs:    make(chan *simpleRequest, 1024),
 		processingReqs: make(chan *simpleRequest, 1024),
-		filter:         newRequestFilterChain(),
+		filter:         filter,
 		quit:           make(chan struct{}),
 		done:           make(chan struct{}),
 	}

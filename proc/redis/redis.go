@@ -21,9 +21,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/samaritan-proxy/samaritan/host"
 	"github.com/samaritan-proxy/samaritan/pb/config/protocol"
 	"github.com/samaritan-proxy/samaritan/pb/config/service"
-	"github.com/samaritan-proxy/samaritan/host"
 	"github.com/samaritan-proxy/samaritan/proc"
 	"github.com/samaritan-proxy/samaritan/proc/internal/log"
 	"github.com/samaritan-proxy/samaritan/stats"
@@ -50,15 +50,14 @@ type redisProc struct {
 	cmdHdlrs map[string]*commandHandler
 	wg       sync.WaitGroup
 
-	cfg      *config
-	cfgHooks []func(*config)
+	cfg *config
 }
 
 func newRedisProc(svcName string, svcCfg *service.Config, svcHosts []*host.Host,
 	stats *proc.Stats, logger log.Logger) (*redisProc, error) {
 	p := &redisProc{
 		name:     svcName,
-		cfg:      svcCfg,
+		cfg:      newConfig(svcCfg),
 		stats:    stats,
 		logger:   logger,
 		cmdHdlrs: make(map[string]*commandHandler),
@@ -73,10 +72,6 @@ func newRedisProc(svcName string, svcCfg *service.Config, svcHosts []*host.Host,
 	p.u = newUpstream(p.cfg, svcHosts, p.logger, p.stats.Upstream)
 	p.initCommandHandlers()
 	return p, nil
-}
-
-func (p *redisProc) registerConfigHook(hook func(*config)) {
-	p.cfgHooks = append(p.cfgHooks, hook)
 }
 
 func (p *redisProc) initCommandHandlers() {
@@ -148,15 +143,12 @@ func (p *redisProc) OnSvcConfigUpdate(newCfg *service.Config) error {
 	if err := newCfg.Validate(); err != nil {
 		return err
 	}
-	p.cfg = newCfg
-	for _, hook := range p.cfgHooks {
-		hook(p.cfg)
-	}
+	p.cfg.Update(newCfg)
 	return nil
 }
 
 func (p *redisProc) Config() *service.Config {
-	return p.cfg
+	return p.cfg.Raw()
 }
 
 func (p *redisProc) Address() string {

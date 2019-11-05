@@ -16,6 +16,8 @@ import (
 	"unicode/utf8"
 
 	"github.com/gogo/protobuf/types"
+
+	redis "github.com/samaritan-proxy/samaritan/pb/config/protocol/redis"
 )
 
 // ensure the imports are used
@@ -31,6 +33,8 @@ var (
 	_ = (*url.URL)(nil)
 	_ = (*mail.Address)(nil)
 	_ = types.DynamicAny{}
+
+	_ = redis.ReadStrategy(0)
 )
 
 // Validate checks the field values on MySQLOption with the rules defined in
@@ -171,6 +175,21 @@ func (m *RedisOption) Validate() error {
 	}
 
 	// no validation rules for ReadStrategy
+
+	{
+		tmp := m.GetCompression()
+
+		if v, ok := interface{}(tmp).(interface{ Validate() error }); ok {
+
+			if err := v.Validate(); err != nil {
+				return RedisOptionValidationError{
+					field:  "Compression",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+	}
 
 	return nil
 }

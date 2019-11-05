@@ -30,6 +30,7 @@ nav:
           - TCP: arch/protocol/tcp.md
           - Redis:
               - Overview: arch/protocol/redis/redis.md
+              - Compression: arch/protocol/redis/compression.md
   - Changelog: changelog.md
   - Proto Reference: proto-ref.md
   - FAQ: faq.md

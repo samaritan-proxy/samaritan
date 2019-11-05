@@ -14,6 +14,11 @@
 
 package redis
 
+import (
+	"bytes"
+	"strconv"
+)
+
 type RespType byte
 
 const (
@@ -36,6 +41,54 @@ var (
 	invalidRequest = "invalid request"
 )
 
+func (r *RespValue) String() string {
+	if r == nil {
+		return ""
+	}
+	switch r.Type {
+	case SimpleString, Error, BulkString:
+		return string(r.Text)
+	case Integer:
+		return strconv.Itoa(int(r.Int))
+	case Array:
+		buf := bytes.NewBuffer(nil)
+		for idx, v := range r.Array {
+			buf.WriteString(v.String())
+			if idx != len(r.Array)-1 {
+				buf.WriteString(" ")
+			}
+		}
+		return buf.String()
+	default:
+		return ""
+	}
+}
+
+func (r *RespValue) Equal(that *RespValue) bool {
+	if that == nil {
+		return r == nil
+	}
+	if that.Type != r.Type {
+		return false
+	}
+	switch r.Type {
+	case Integer:
+		return that.Int == r.Int
+	case Array:
+		if len(that.Array) != len(r.Array) {
+			return false
+		}
+		for idx, val := range r.Array {
+			if !val.Equal(&that.Array[idx]) {
+				return false
+			}
+		}
+	default:
+		return bytes.Equal(that.Text, r.Text)
+	}
+	return true
+}
+
 func newError(s string) *RespValue {
 	return &RespValue{
 		Type: Error,
@@ -50,10 +103,24 @@ func newSimpleString(s string) *RespValue {
 	}
 }
 
+func newSimpleBytes(b []byte) *RespValue {
+	return &RespValue{
+		Type: SimpleString,
+		Text: b,
+	}
+}
+
 func newBulkString(s string) *RespValue {
 	return &RespValue{
 		Type: BulkString,
 		Text: []byte(s),
+	}
+}
+
+func newBulkBytes(b []byte) *RespValue {
+	return &RespValue{
+		Type: BulkString,
+		Text: b,
 	}
 }
 
@@ -73,4 +140,20 @@ func newArray(array []RespValue) *RespValue {
 		Type:  Array,
 		Array: array,
 	}
+}
+
+func newStringArray(str ...string) *RespValue {
+	arr := make([]RespValue, len(str))
+	for idx, s := range str {
+		arr[idx] = *newBulkString(s)
+	}
+	return newArray(arr)
+}
+
+func newByteArray(b ...[]byte) *RespValue {
+	arr := make([]RespValue, len(b))
+	for idx, s := range b {
+		arr[idx] = *newBulkBytes(s)
+	}
+	return newArray(arr)
 }

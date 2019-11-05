@@ -14,14 +14,12 @@
 
 syntax = "proto3";
 
-package protocol;
+package redis;
 
 import "gogoproto/gogo.proto";
 import "validate/validate.proto";
 
-import "config/protocol/redis/redis.proto";
-
-option go_package = "github.com/samaritan-proxy/samaritan/pb/config/protocol";
+option go_package = "github.com/samaritan-proxy/samaritan/pb/config/protocol/redis";
 
 option (gogoproto.enum_stringer_all) = false;
 option (gogoproto.goproto_enum_stringer_all) = true;
@@ -31,32 +29,33 @@ option (gogoproto.gostring_all) = true;
 option (gogoproto.marshaler_all) = true;
 option (gogoproto.unmarshaler_all) = true;
 
-// Protocol enum.
-enum Protocol {
-  option (gogoproto.goproto_enum_prefix) = false;
-  UNKNOWN = 0;
-  // TCP
-  TCP = 1;
-  // MySQL
-  MySQL = 2;
-  // Redis
-  Redis = 3;
+// Strategy of a read only command.
+enum ReadStrategy {
+  // Read from master nodes.
+  MASTER = 0;
+  // Read from slave nodes.
+  SLAVE = 1;
+  // Read from all nodes.
+  BOTH = 2;
 }
 
-// MySQL protocol option.
-message MySQLOption {}
+// Configuration of compression.
+message Compression {
+  // Switch of compress, default is off.
+  // NOTE: Uncompress will always work.
+  bool enable = 1;
 
-// TCP protocol option.
-message TCPOption {}
+  enum Method {
+    SNAPPY = 0;
 
-// Redis protocol option.
-message RedisOption {
+    MOCK = 255;
 
-  // Strategy of a read only command.
-  redis.ReadStrategy read_strategy = 1;
+    reserved 256 to max;
+  }
+  // Compression algorithm used in compression filter.
+  Method method = 2 [ (validate.rules).enum = {in : [ 0, 254 ]} ];
 
-  // Configuration of compression.
-  redis.Compression compression = 2;
-
-  reserved 3 to 4;
+  // Value will be ignored when byte length of value is less than the
+  // threshold, must be greater than 0.
+  uint32 threshold = 3 [ (validate.rules).uint32 = {gt : 0} ];
 }

@@ -19,7 +19,6 @@ package redis
 import (
 	"errors"
 
-	"github.com/samaritan-proxy/samaritan/pb/config/service"
 	"github.com/samaritan-proxy/samaritan/stats"
 )
 
@@ -52,7 +51,7 @@ type filterBuilder interface {
 
 // filterBuildParams wraps all the parameters required by the builder
 type filterBuildParams struct {
-	Config *service.Config
+	Config *config
 	Scope  *stats.Scope
 }
 
