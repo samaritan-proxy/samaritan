@@ -33,7 +33,7 @@ var (
 func init() {
 	logger = log.NewLogger(os.Stdout, defaultFlags)
 	logger.SetCallerOffset(1)
-	logger.SetOutputLevel(log.INFO)
+	logger.SetOutputLevel(log.DEBUG)
 }
 
 func InitSyslog(target, tag string) {
