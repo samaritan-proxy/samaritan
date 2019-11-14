@@ -17,12 +17,21 @@ after_success:
 
 before_deploy:
   - 'if [ "$TRAVIS_TAG" != "" ]; then make release; fi'
+  - openssl aes-256-cbc -K $encrypted_fa8540867d09_key -iv $encrypted_fa8540867d09_iv -in .travis/deploy_key.enc -out .travis/deploy_key -d
+  - chmod 600 .travis/deploy_key
+
 deploy:
   # deploy docs to website
   - provider: script
     script: .travis/deploy_docs.sh
     on:
       all_branches: true
+
+  # sync proto definitions
+  - provider: script
+    script: GIT_SSH_COMMAND="ssh -i $(pwd)/.travis/deploy_key" make sync-proto
+    on:
+      branch: master
 
   # deploy tarballs to github
   - provider: releases

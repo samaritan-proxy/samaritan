@@ -21,12 +21,8 @@ set -o nounset
 # build
 make docs
 
-# unencrypt deploy key
-openssl aes-256-cbc -K $encrypted_fa8540867d09_key -iv $encrypted_fa8540867d09_iv -in .travis/docs_deploy_key.enc -out .travis/docs_deploy_key -d
-chmod 600 .travis/docs_deploy_key
-
 # publish
-GIT_SSH_COMMAND="ssh -i $(pwd)/.travis/docs_deploy_key"
+GIT_SSH_COMMAND="ssh -i $(pwd)/.travis/deploy_key"
 export GIT_SSH_COMMAND
 make pub-docs
 unset GIT_SSH_COMMAND

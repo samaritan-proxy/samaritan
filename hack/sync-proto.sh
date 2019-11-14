@@ -35,6 +35,11 @@ find . -name "*.proto" -exec sed -i '/option go_package =.*/d' {} \;
 # push to git repo
 git config user.name "sam-ci-bot"
 git config user.email sam-ci-bot@users.noreply.github.com
+diff=$(git --no-pager diff)
+if [ -z "$diff" ]; then
+    echo "No files change"
+    exit 0
+fi
 git add .
 git commit -m "Update proto definitions"
 git push
