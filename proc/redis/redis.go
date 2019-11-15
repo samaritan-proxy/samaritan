@@ -210,6 +210,9 @@ func (p *redisProc) handleRequest(req *rawRequest) {
 		}
 		latency := uint64(req.Duration() / time.Microsecond)
 		cmdStats.LatencyMicros.Record(latency)
+		if latency > p.cfg.slowReqThresholdInMicros {
+			p.stats.Counter("rq_slow_total").Inc()
+		}
 	})
 	hdlr.handle(p.u, req)
 }

@@ -19,11 +19,13 @@ import "github.com/samaritan-proxy/samaritan/pb/config/service"
 // Maybe will add some internal fields in the future, so define it.
 type config struct {
 	*service.Config
+	slowReqThresholdInMicros uint64 // milliseconds
 }
 
 func newConfig(c *service.Config) *config {
 	return &config{
-		Config: c,
+		Config:                   c,
+		slowReqThresholdInMicros: 50 * 1000, // 50ms
 	}
 }
 
