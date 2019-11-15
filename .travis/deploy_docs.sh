@@ -22,7 +22,7 @@ set -o nounset
 make docs
 
 # publish
-GIT_SSH_COMMAND="ssh -i $(pwd)/.travis/docs_deploy_key"
+GIT_SSH_COMMAND="ssh -i $(pwd)/.travis/deploy_key"
 export GIT_SSH_COMMAND
 make pub-docs
 unset GIT_SSH_COMMAND
