@@ -1,18 +1,47 @@
-# Redis Cluster
+# Redis
 
-Redis Processor in samaritan serves as a [Redis Cluster](https://redis.io/topics/cluster-spec) Proxy just as [corvus](https://github.com/eleme/corvus).
+Redis proc in samaritan serves as a [Redis Cluster] Proxy just as [corvus](https://github.com/eleme/corvus).
 
-It adapts the Redis Cluster Protocol to the Single Redis Protocol. In Redis Cluster Protocol, a client should be able to react to `MOVED` and `ASK` response while in a single redis protocol clients know nothing about sharding.
+>Most redis client implementations don't support redis cluster. We have a lot of services relying on redis, which are written in Python, Java, Go, Nodejs etc.
+>It's hard to provide redis client libraries for multiple languages without breaking compatibilities. We used twemproxy before, but it relies on sentinel
+>for high availabity, it also requires restarting to add or remove backend redis instances, which causes service interruption.
+>And twemproxy is single threaded, we have to deploy multiple twemproxy instances for large number of clients, which causes the sa headaches.
 
-```text
-Single Redis Protocol client -> Redis Cluster Proxy -> Redis Cluster
+## Statistics
+
+Provide detailed metrics about connection, request and per command, see [here](/arch/stats#redis)
+
+## Workflow
+
+The following figure illustrates the processing flow of a request.
+
+```mermaid
+sequenceDiagram
+    participant client as Client
+    participant sess as Session
+    participant node as Node
+    participant backend as Backend
+
+    client ->> sess: send request
+    sess ->> sess: handle request
+    sess -->> node: select node by key, wait request finish
+    node ->> node: filter chain
+    node ->> backend: send request to backend
+    backend ->> node: read response from backend
+    node ->> node: handle error
+    node -->> sess: finish request
+    sess ->> client: send response
 ```
 
-## Redis Version
+!!! note
+    1. Only opens one conection to the same node of redis cluster, and [use pipelining] to process commands.
 
-* Supporting Redis <= 4.x
+## Requirements
 
-## Modified commands
+- Redis <= 5.0
+
+## Commands
+### Modified
 
 * `MGET`: split to multiple `GET`.
 * `MSET`: split to multiple `SET`.
@@ -25,7 +54,7 @@ Single Redis Protocol client -> Redis Cluster Proxy -> Redis Cluster
 * `CONFIG`: support `get`, `set`, and `rewrite` sub-command to retrieve and manipulate corvus config.
 * `SELECT`: ignored if index is `0`, won't be forwarded.
 
-## Restricted commands
+### Restricted
 
 !!! warning
     The following commands require all argument keys to belong to the same redis node.
@@ -35,7 +64,7 @@ Single Redis Protocol client -> Redis Cluster Proxy -> Redis Cluster
 * `ZINTERSTORE`, `ZUNIONSTORE`.
 * `PFCOUNTE`, `PFMERGE`.
 
-## Unsupported commands
+### Unsupported
 
 The following commands are not available, such as `KEYS`, we can't search keys across
 all backend redis instances.
@@ -52,51 +81,7 @@ all backend redis instances.
    `FLUSHDB`, `LASTSAVE`, `MONITOR`, `ROLE`, `SAVE`, `SHUTDOWN`, `SLAVEOF`, `SYNC`.
 * `SLOWLOG`
 
-## Statistics
 
-[statistics reference](/arch/stats/#statistics)
 
-## Workflow
-
-```mermaid
-sequenceDiagram
-    participant client as Client
-    participant sess as Session
-    participant node as Node
-    participant backend as Backend
-    
-    client ->> sess: send request
-    sess ->> sess: handle request
-    sess -->> node: select node by key, wait request finish
-    node ->> node: filter chain
-    node ->> backend: send request to backend
-    backend ->> node: read response from backend
-    node ->> node: handle error
-    node -->> sess: finish request
-    sess ->> client: send response
-```
-
-## Connection Model
-
-Samaritan only open a connection to redis and uses the pipeline to communicate.
-
-```mermaid
-graph LR
-    Client-- N:N ---Samaritan
-    Samaritan-- 1:1 ---Redis
-```
-
-### Filter & FilterChain
-
-Filter is used to extend the redis proc, which can modify or intercept requests.
-
-```go
-type Filter interface {
-	Do(req *simpleRequest) FilterStatus
-	Destroy()
-}
-```
-
-Filter chain is used to store filter.
-`Filter.Do` will be called by filter chain, if `FilterStatus` is `Stop`, 
-the filter chain will stop and the subsequent filters will be ignored.
+[Redis Cluster]: https://redis.io/topics/cluster-spec
+[use pipelining]: https://redis.io/topics/pipelining

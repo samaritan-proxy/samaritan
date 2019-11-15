@@ -10,15 +10,13 @@ Samaritan provide detailed metrics about connection and request which could help
 >
 > - Histograms: Unsigned integers that are part of a stream of values that are then aggregated by the collector to ultimately yield summarized percentile values.
 
-## Statistics
-
-### Global
+## Global
 
 | Name | Type  | Description |
 |------|-------|-------------|
 | live | Gauge | live status |
 
-### Runtime
+## Runtime
 
 | Name                        | Type      | Description                                            |
 |-----------------------------|-----------|--------------------------------------------------------|
@@ -41,11 +39,11 @@ Samaritan provide detailed metrics about connection and request which could help
 | runtime.mallocs             | Gauge     | The cumulative count of heap objects allocated         |
 | runtime.frees               | Gauge     | The cumulative count of heap objects freed             |
 
-### Service
+## Service
 
-#### Common
+### Common
 
-##### L4
+#### L4
 
 prefix: service.{service_name}.
 
@@ -67,7 +65,7 @@ prefix: service.{service_name}.
 | upstream.cx_connect_timeout  | Counter   | upstream total connection connect timeouts |
 | upstream.cx_connect_fail     | Counter   | upstream connection failures               |
 
-##### L7
+#### L7
 
 prefix: service.{service_name}.
 
@@ -88,17 +86,30 @@ prefix: service.{service_name}.
 | upstream.rq_rx_bytes_length   | Histogram | upstream received request bytes length   |
 | upstream.rq_tx_bytes_length   | Histogram | upstream sent request bytes length       |
 
-#### Redis
+### Redis
 
 prefix: service.{service_name}.
 
-| Name                           | Type      | Description                 |
-|--------------------------------|-----------|-----------------------------|
-| slots_refresh.total            | Counter   | slots refresh total count   |
-| slots_refresh.success_total    | Counter   | slots refresh success count |
-| slots_refresh.failure_total    | Counter   | slots refresh failure count |
-| redis.{COMMAND}.total          | Counter   | {COMMAND} total count       |
-| redis.{COMMAND}.success        | Counter   | {COMMAND} success count     |
-| redis.{COMMAND}.error          | Counter   | {COMMAND} error count       |
-| redis.{COMMAND}.latency_micros | Histogram | {COMMAND} latency micros    |
-| redis.moved                    | Counter   | MOVED count                 |
+#### global
+
+| Name          | Type    | Description                                            |
+|---------------|---------|--------------------------------------------------------|
+| rq_slow_total | Counter | slow request count, default latency threshold is 50ms |
+
+#### per command
+
+| Name                           | Type      | Description               |
+|--------------------------------|-----------|---------------------------|
+| redis.{command}.total          | Counter   | command count             |
+| redis.{command}.success        | Counter   | command success count     |
+| redis.{command}.error          | Counter   | command error count       |
+| redis.{command}.latency_micros | Histogram | command latency in micros |
+
+#### upstream
+
+| Name                                 | Type    | Description                 |
+|--------------------------------------|---------|-----------------------------|
+| upstream.moved                       | Counter | moved request count         |
+| upstream.slots_refresh.total         | Counter | slots refresh total count   |
+| upstream.slots_refresh.success_total | Counter | slots refresh success count |
+| upstream.slots_refresh.failure_total | Counter | slots refresh failure count |
