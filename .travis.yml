@@ -24,12 +24,14 @@ deploy:
   # deploy docs to website
   - provider: script
     script: .travis/deploy_docs.sh
+    skip_cleanup: true
     on:
       all_branches: true
 
   # sync proto definitions
   - provider: script
     script: GIT_SSH_COMMAND="ssh -i $(pwd)/.travis/deploy_key" make sync-proto
+    skip_cleanup: true
     on:
       branch: master
 
