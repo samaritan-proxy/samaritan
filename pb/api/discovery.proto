@@ -14,7 +14,7 @@
 
 syntax = "proto3";
 
-package discovery;
+package api;
 
 import "gogoproto/gogo.proto";
 import "validate/validate.proto";

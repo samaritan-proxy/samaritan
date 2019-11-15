@@ -18,11 +18,7 @@ set -o errexit
 set -o pipefail
 set -o nounset
 
-# build
-make docs
-
-# publish
-GIT_SSH_COMMAND="ssh -i $(pwd)/.travis/docs_deploy_key"
-export GIT_SSH_COMMAND
-make pub-docs
-unset GIT_SSH_COMMAND
+pushd .travis
+find . -name "*_deploy_key.enc" -exec sh -c 'openssl aes-256-cbc -K $encrypted_fa8540867d09_key -iv $encrypted_fa8540867d09_iv -in $0 -out ${0%.enc} -d' {} \;
+find . -name "*_deploy_key" -exec chmod 600 {} \;
+popd

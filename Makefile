@@ -92,6 +92,10 @@ generate:
 clean-proto:
 	@./hack/gen-proto.sh -c
 
+.PHONY: sync-proto
+sync-proto:
+	@./hack/sync-proto.sh
+
 
 .PHONY: test
 test:
@@ -120,4 +124,5 @@ clean:
 	@rm -rf docs/site
 	@rm -rf .release
 	@find . -name "cover.out" -exec rm {} \;
-	@rm coverage.txt
+	@rm -f coverage.txt
+	@rm -rf .ci

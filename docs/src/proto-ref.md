@@ -85,17 +85,17 @@
   
 
 - [api/discovery.proto](#api/discovery.proto)
-    - [SvcConfigDiscoveryRequest](#discovery.SvcConfigDiscoveryRequest)
-    - [SvcConfigDiscoveryResponse](#discovery.SvcConfigDiscoveryResponse)
-    - [SvcConfigDiscoveryResponse.UpdatedEntry](#discovery.SvcConfigDiscoveryResponse.UpdatedEntry)
-    - [SvcDiscoveryRequest](#discovery.SvcDiscoveryRequest)
-    - [SvcDiscoveryResponse](#discovery.SvcDiscoveryResponse)
-    - [SvcEndpointDiscoveryRequest](#discovery.SvcEndpointDiscoveryRequest)
-    - [SvcEndpointDiscoveryResponse](#discovery.SvcEndpointDiscoveryResponse)
+    - [SvcConfigDiscoveryRequest](#api.SvcConfigDiscoveryRequest)
+    - [SvcConfigDiscoveryResponse](#api.SvcConfigDiscoveryResponse)
+    - [SvcConfigDiscoveryResponse.UpdatedEntry](#api.SvcConfigDiscoveryResponse.UpdatedEntry)
+    - [SvcDiscoveryRequest](#api.SvcDiscoveryRequest)
+    - [SvcDiscoveryResponse](#api.SvcDiscoveryResponse)
+    - [SvcEndpointDiscoveryRequest](#api.SvcEndpointDiscoveryRequest)
+    - [SvcEndpointDiscoveryResponse](#api.SvcEndpointDiscoveryResponse)
   
   
   
-    - [DiscoveryService](#discovery.DiscoveryService)
+    - [DiscoveryService](#api.DiscoveryService)
   
 
 - [Scalar Value Types](#scalar-value-types)
@@ -738,7 +738,7 @@ Load balance policy.
 
 
 
-<a name="discovery.SvcConfigDiscoveryRequest"></a>
+<a name="api.SvcConfigDiscoveryRequest"></a>
 
 ### SvcConfigDiscoveryRequest
 
@@ -754,7 +754,7 @@ Load balance policy.
 
 
 
-<a name="discovery.SvcConfigDiscoveryResponse"></a>
+<a name="api.SvcConfigDiscoveryResponse"></a>
 
 ### SvcConfigDiscoveryResponse
 
@@ -762,14 +762,14 @@ Load balance policy.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| updated | [SvcConfigDiscoveryResponse.UpdatedEntry](#discovery.SvcConfigDiscoveryResponse.UpdatedEntry) | repeated | Update of configuration. |
+| updated | [SvcConfigDiscoveryResponse.UpdatedEntry](#api.SvcConfigDiscoveryResponse.UpdatedEntry) | repeated | Update of configuration. |
 
 
 
 
 
 
-<a name="discovery.SvcConfigDiscoveryResponse.UpdatedEntry"></a>
+<a name="api.SvcConfigDiscoveryResponse.UpdatedEntry"></a>
 
 ### SvcConfigDiscoveryResponse.UpdatedEntry
 
@@ -785,7 +785,7 @@ Load balance policy.
 
 
 
-<a name="discovery.SvcDiscoveryRequest"></a>
+<a name="api.SvcDiscoveryRequest"></a>
 
 ### SvcDiscoveryRequest
 
@@ -800,7 +800,7 @@ Load balance policy.
 
 
 
-<a name="discovery.SvcDiscoveryResponse"></a>
+<a name="api.SvcDiscoveryResponse"></a>
 
 ### SvcDiscoveryResponse
 
@@ -816,7 +816,7 @@ Load balance policy.
 
 
 
-<a name="discovery.SvcEndpointDiscoveryRequest"></a>
+<a name="api.SvcEndpointDiscoveryRequest"></a>
 
 ### SvcEndpointDiscoveryRequest
 
@@ -832,7 +832,7 @@ Load balance policy.
 
 
 
-<a name="discovery.SvcEndpointDiscoveryResponse"></a>
+<a name="api.SvcEndpointDiscoveryResponse"></a>
 
 ### SvcEndpointDiscoveryResponse
 
@@ -855,7 +855,7 @@ Load balance policy.
  
 
 
-<a name="discovery.DiscoveryService"></a>
+<a name="api.DiscoveryService"></a>
 
 ### DiscoveryService
 DiscoveryService is a service which is used to discover service, service config
@@ -863,9 +863,9 @@ and service endpoints.
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
-| StreamSvcs | [SvcDiscoveryRequest](#discovery.SvcDiscoveryRequest) | [SvcDiscoveryResponse](#discovery.SvcDiscoveryResponse) stream |  |
-| StreamSvcConfigs | [SvcConfigDiscoveryRequest](#discovery.SvcConfigDiscoveryRequest) stream | [SvcConfigDiscoveryResponse](#discovery.SvcConfigDiscoveryResponse) stream |  |
-| StreamSvcEndpoints | [SvcEndpointDiscoveryRequest](#discovery.SvcEndpointDiscoveryRequest) stream | [SvcEndpointDiscoveryResponse](#discovery.SvcEndpointDiscoveryResponse) stream |  |
+| StreamSvcs | [SvcDiscoveryRequest](#api.SvcDiscoveryRequest) | [SvcDiscoveryResponse](#api.SvcDiscoveryResponse) stream |  |
+| StreamSvcConfigs | [SvcConfigDiscoveryRequest](#api.SvcConfigDiscoveryRequest) stream | [SvcConfigDiscoveryResponse](#api.SvcConfigDiscoveryResponse) stream |  |
+| StreamSvcEndpoints | [SvcEndpointDiscoveryRequest](#api.SvcEndpointDiscoveryRequest) stream | [SvcEndpointDiscoveryResponse](#api.SvcEndpointDiscoveryResponse) stream |  |
 
  
 
