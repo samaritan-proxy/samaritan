@@ -143,3 +143,13 @@ func (r *reader) Close() {
 	r.pool.Put(r.Reader)
 	r.Reader = nil
 }
+
+func parseCursor(cursor uint64) (uint16, uint64) {
+	sign := uint16(cursor >> 48)
+	cursor = cursor & 0xffffffffffff
+	return sign, cursor
+}
+
+func genCursor(sign uint16, cursor uint64) uint64 {
+	return uint64(sign)<<48 | cursor
+}

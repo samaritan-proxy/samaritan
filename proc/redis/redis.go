@@ -87,6 +87,7 @@ func (p *redisProc) initCommandHandlers() {
 	p.addHandler(scope, "eval", handleEval)
 	p.addHandler(scope, "mset", handleMSet)
 	p.addHandler(scope, "mget", handleMGet)
+	p.addHandler(scope, "scan", handleScan)
 
 	p.addHandler(scope, "ping", handlePing)
 	p.addHandler(scope, "quit", handleQuit)

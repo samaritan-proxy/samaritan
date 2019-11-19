@@ -207,6 +207,29 @@ func handleSlowlog(u *upstream, req *rawRequest) {
 	// TODO: implement it
 }
 
+var (
+	invalidCursor = "invalid cursor"
+)
+
 func handleScan(u *upstream, req *rawRequest) {
-	// TODO: implement it
+	// SCAN cursor [MATCH pattern] [COUNT count] [TYPE type]
+	body := req.Body()
+	if len(body.Array) < 2 {
+		req.SetResponse(newError(invalidRequest))
+		return
+	}
+
+	cursor, err := btoi64(body.Array[1].Text)
+	if err != nil {
+		req.SetResponse(newError(invalidCursor))
+		return
+	}
+
+	// TODO: limit the count
+
+	simpleReq := newSimpleRequest(body)
+	simpleReq.RegisterHook(func(simpleReq *simpleRequest) {
+		req.SetResponse(simpleReq.Response())
+	})
+	u.MakeScanRequest(uint64(cursor), simpleReq)
 }
