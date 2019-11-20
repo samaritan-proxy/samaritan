@@ -81,7 +81,7 @@ func TestSessionWriteError(t *testing.T) {
 
 		// make a request
 		sconn, _ := l.Accept()
-		sconn.Write(encode(newArray(
+		sconn.Write(encode(newArray( //nolint:errcheck
 			*newBulkString("get"),
 			*newBulkString("a"),
 		)))
