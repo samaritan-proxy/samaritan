@@ -17,13 +17,35 @@ package admin
 import (
 	"net/http"
 	_ "net/http/pprof"
+
+	statshttp "github.com/kirk91/stats/http"
+	"github.com/samaritan-proxy/samaritan/consts"
+	"github.com/samaritan-proxy/samaritan/stats"
 )
 
 func (s *Server) addHandler() {
-	s.router.Methods(http.MethodGet).Path("/config").HandlerFunc(s.handleGetConfig)
-	s.router.Methods(http.MethodGet).Path("/stats").HandlerFunc(s.handleGetStats)
-	s.router.Methods(http.MethodGet).Path("/stats/prometheus").HandlerFunc(s.handleGetStatsForPrometheus)
-	s.router.PathPrefix("/debug/").Handler(http.DefaultServeMux)
-	s.router.PathPrefix("/ops").Subrouter().Path("/shutdown").HandlerFunc(s.handleShutdown)
+	// config
+	s.router.Methods(http.MethodGet).
+		Path("/config").
+		HandlerFunc(s.handleGetConfig)
+
+	// stats
+	s.router.Methods(http.MethodGet).
+		Path("/stats").
+		Handler(statshttp.Handler(stats.Store()))
+	s.router.Methods(http.MethodGet).
+		Path("/stats/prometheus").
+		Handler(statshttp.PrometheusHandler(stats.Store(), consts.AppName))
+
+	// ops
+	s.router.PathPrefix("/ops").
+		Subrouter().
+		Path("/shutdown").
+		HandlerFunc(s.handleShutdown)
+
+	// pprof
+	s.router.PathPrefix("/debug/").
+		Handler(http.DefaultServeMux)
+
 	// TODO: add /help return help of all api
 }

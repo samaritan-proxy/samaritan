@@ -65,6 +65,11 @@ func init() {
 	}
 }
 
+// Store returns the default store.
+func Store() *stats.Store {
+	return defaultStore
+}
+
 // Init inits the stats.
 func Init(sinks ...Sink) error {
 	// set tag options
