@@ -135,7 +135,7 @@ func newInteger(i int64) *RespValue {
 	}
 }
 
-func newArray(array []RespValue) *RespValue {
+func newArray(array ...RespValue) *RespValue {
 	return &RespValue{
 		Type:  Array,
 		Array: array,
@@ -147,7 +147,7 @@ func newStringArray(str ...string) *RespValue {
 	for idx, s := range str {
 		arr[idx] = *newBulkString(s)
 	}
-	return newArray(arr)
+	return newArray(arr...)
 }
 
 func newByteArray(b ...[]byte) *RespValue {
@@ -155,5 +155,5 @@ func newByteArray(b ...[]byte) *RespValue {
 	for idx, s := range b {
 		arr[idx] = *newBulkBytes(s)
 	}
-	return newArray(arr)
+	return newArray(arr...)
 }

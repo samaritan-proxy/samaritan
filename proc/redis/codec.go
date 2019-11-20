@@ -138,7 +138,7 @@ func (d *decoder) decodeInline() (*RespValue, error) {
 	if len(multi) == 0 {
 		return nil, ErrBadMultiBulkLen
 	}
-	return newArray(multi), nil
+	return newArray(multi...), nil
 }
 
 func (d *decoder) decodeInt() (int64, error) {

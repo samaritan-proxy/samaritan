@@ -15,6 +15,7 @@
 package redis
 
 import (
+	"strconv"
 	"testing"
 	"time"
 
@@ -99,20 +100,20 @@ func TestNewMSetRequest(t *testing.T) {
 		noError bool
 	}{
 		{
-			raw: newRawRequest(newArray([]RespValue{*newBulkString("mset")})),
+			raw: newRawRequest(newArray(*newBulkString("mset"))),
 		},
 		{
-			raw: newRawRequest(newArray([]RespValue{
+			raw: newRawRequest(newArray(
 				*newBulkString("mset"),
 				*newBulkString("a"),
-			})),
+			)),
 		},
 		{
-			raw: newRawRequest(newArray([]RespValue{
+			raw: newRawRequest(newArray(
 				*newBulkString("mset"),
 				*newBulkString("a"),
 				*newBulkString("1"),
-			})),
+			)),
 			noError: true,
 		},
 	}
@@ -128,36 +129,36 @@ func TestNewMSetRequest(t *testing.T) {
 }
 
 func TestMSetRequestSplit(t *testing.T) {
-	raw := newRawRequest(newArray([]RespValue{
+	raw := newRawRequest(newArray(
 		*newBulkString("mset"),
 		*newBulkString("a"),
 		*newBulkString("1"),
 		*newBulkString("b"),
 		*newBulkString("2"),
-	}))
+	))
 	msetReq, _ := newMSetRequest(raw)
 	reqs := msetReq.Split()
 	assert.Equal(t, 2, len(reqs))
-	assert.Equal(t, newArray([]RespValue{
+	assert.Equal(t, newArray(
 		*newBulkString("set"),
 		*newBulkString("a"),
 		*newBulkString("1"),
-	}), reqs[0].Body())
-	assert.Equal(t, newArray([]RespValue{
+	), reqs[0].Body())
+	assert.Equal(t, newArray(
 		*newBulkString("set"),
 		*newBulkString("b"),
 		*newBulkString("2"),
-	}), reqs[1].Body())
+	), reqs[1].Body())
 }
 
 func TestMSetRequesChildDone(t *testing.T) {
-	raw := newRawRequest(newArray([]RespValue{
+	raw := newRawRequest(newArray(
 		*newBulkString("mset"),
 		*newBulkString("a"),
 		*newBulkString("1"),
 		*newBulkString("b"),
 		*newBulkString("2"),
-	}))
+	))
 
 	msetReq, _ := newMSetRequest(raw)
 	reqs := msetReq.Split()
@@ -180,21 +181,21 @@ func TestNewMGetRequest(t *testing.T) {
 		noError bool
 	}{
 		{
-			raw: newRawRequest(newArray([]RespValue{*newBulkString("mget")})),
+			raw: newRawRequest(newArray(*newBulkString("mget"))),
 		},
 		{
-			raw: newRawRequest(newArray([]RespValue{
+			raw: newRawRequest(newArray(
 				*newBulkString("mget"),
 				*newBulkString("a"),
-			})),
+			)),
 			noError: true,
 		},
 		{
-			raw: newRawRequest(newArray([]RespValue{
+			raw: newRawRequest(newArray(
 				*newBulkString("mget"),
 				*newBulkString("a"),
 				*newBulkString("b"),
-			})),
+			)),
 			noError: true,
 		},
 	}
@@ -210,30 +211,30 @@ func TestNewMGetRequest(t *testing.T) {
 }
 
 func TestMGetRequestSplit(t *testing.T) {
-	raw := newRawRequest(newArray([]RespValue{
+	raw := newRawRequest(newArray(
 		*newBulkString("mget"),
 		*newBulkString("a"),
 		*newBulkString("b"),
-	}))
+	))
 	mgetReq, _ := newMGetRequest(raw)
 	reqs := mgetReq.Split()
 	assert.Equal(t, 2, len(reqs))
-	assert.Equal(t, newArray([]RespValue{
+	assert.Equal(t, newArray(
 		*newBulkString("get"),
 		*newBulkString("a"),
-	}), reqs[0].Body())
-	assert.Equal(t, newArray([]RespValue{
+	), reqs[0].Body())
+	assert.Equal(t, newArray(
 		*newBulkString("get"),
 		*newBulkString("b"),
-	}), reqs[1].Body())
+	), reqs[1].Body())
 }
 
 func TestMGetRequestChildDone(t *testing.T) {
-	raw := newRawRequest(newArray([]RespValue{
+	raw := newRawRequest(newArray(
 		*newBulkString("mget"),
 		*newBulkString("a"),
 		*newBulkString("b"),
-	}))
+	))
 
 	mgetReq, _ := newMGetRequest(raw)
 	reqs := mgetReq.Split()
@@ -245,10 +246,10 @@ func TestMGetRequestChildDone(t *testing.T) {
 	})
 
 	raw.Wait()
-	expected := newArray([]RespValue{
+	expected := newArray(
 		*newBulkString("1"),
 		*newBulkString("2"),
-	})
+	)
 	assert.Equal(t, expected, raw.Response())
 }
 
@@ -258,21 +259,21 @@ func TestNewSumResultRequest(t *testing.T) {
 		noError bool
 	}{
 		{
-			raw: newRawRequest(newArray([]RespValue{*newBulkString("touch")})),
+			raw: newRawRequest(newArray(*newBulkString("touch"))),
 		},
 		{
-			raw: newRawRequest(newArray([]RespValue{
+			raw: newRawRequest(newArray(
 				*newBulkString("touch"),
 				*newBulkString("a"),
-			})),
+			)),
 			noError: true,
 		},
 		{
-			raw: newRawRequest(newArray([]RespValue{
+			raw: newRawRequest(newArray(
 				*newBulkString("touch"),
 				*newBulkString("a"),
 				*newBulkString("b"),
-			})),
+			)),
 			noError: true,
 		},
 	}
@@ -288,30 +289,30 @@ func TestNewSumResultRequest(t *testing.T) {
 }
 
 func TestSumResultRequestSplit(t *testing.T) {
-	raw := newRawRequest(newArray([]RespValue{
+	raw := newRawRequest(newArray(
 		*newBulkString("unlink"),
 		*newBulkString("a"),
 		*newBulkString("b"),
-	}))
+	))
 	sumResReq, _ := newSumResultRequest(raw)
 	reqs := sumResReq.Split()
 	assert.Equal(t, 2, len(reqs))
-	assert.Equal(t, newArray([]RespValue{
+	assert.Equal(t, newArray(
 		*newBulkString("unlink"),
 		*newBulkString("a"),
-	}), reqs[0].Body())
-	assert.Equal(t, newArray([]RespValue{
+	), reqs[0].Body())
+	assert.Equal(t, newArray(
 		*newBulkString("unlink"),
 		*newBulkString("b"),
-	}), reqs[1].Body())
+	), reqs[1].Body())
 }
 
 func TestSumResultRequestChildDone(t *testing.T) {
-	raw := newRawRequest(newArray([]RespValue{
+	raw := newRawRequest(newArray(
 		*newBulkString("unlink"),
 		*newBulkString("a"),
 		*newBulkString("b"),
-	}))
+	))
 	sumResReq, _ := newSumResultRequest(raw)
 	reqs := sumResReq.Split()
 	time.AfterFunc(time.Millisecond*100, func() {
@@ -323,11 +324,11 @@ func TestSumResultRequestChildDone(t *testing.T) {
 }
 
 func TestSumResultRequestChildDoneWithError(t *testing.T) {
-	raw := newRawRequest(newArray([]RespValue{
+	raw := newRawRequest(newArray(
 		*newBulkString("unlink"),
 		*newBulkString("a"),
 		*newBulkString("b"),
-	}))
+	))
 	sumResReq, _ := newSumResultRequest(raw)
 	reqs := sumResReq.Split()
 	time.AfterFunc(time.Millisecond*100, func() {
@@ -336,4 +337,140 @@ func TestSumResultRequestChildDoneWithError(t *testing.T) {
 	})
 	raw.Wait()
 	assert.Equal(t, Error, raw.Response().Type)
+}
+
+func TestNewScanRequest(t *testing.T) {
+	tests := []struct {
+		name    string
+		raw     *rawRequest
+		noError bool
+	}{
+		{
+			name: "invalid request",
+			raw: newRawRequest(newArray(
+				*newBulkString("scan"),
+			)),
+		},
+		{
+			name: "invalid cursor",
+			raw: newRawRequest(newArray(
+				*newBulkString("scan"),
+				*newBulkString("abc"),
+			)),
+		},
+		{
+			name: "normal",
+			raw: newRawRequest(newArray(
+				*newBulkString("scan"),
+				*newBulkString("0"),
+			)),
+			noError: true,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			scanReq, err := newScanRequest(test.raw)
+			if !test.noError {
+				assert.Error(t, err)
+				return
+			}
+			assert.NoError(t, err)
+			assert.NotNil(t, scanReq)
+		})
+	}
+}
+
+func TestScanRequestGenCursor(t *testing.T) {
+	r := new(scanRequest)
+	cursor := r.genCursor(0, 10)
+	assert.Equal(t, uint64(0)<<48|uint64(10), cursor)
+	cursor = r.genCursor(1, 10)
+	assert.Equal(t, uint64(1)<<48|uint64(10), cursor)
+}
+
+func TestScanRequestParseCursor(t *testing.T) {
+	r := new(scanRequest)
+	nodeIdx, nodeCursor := r.parseCursor(10)
+	assert.Equal(t, uint16(0), nodeIdx)
+	assert.Equal(t, uint64(10), nodeCursor)
+
+	cursor := uint64(1)<<48 | uint64(20)
+	nodeIdx, nodeCursor = r.parseCursor(cursor)
+	assert.Equal(t, uint16(1), nodeIdx)
+	assert.Equal(t, uint64(20), nodeCursor)
+}
+
+func TestScanRequestConvert(t *testing.T) {
+	raw := newRawRequest(newArray(
+		*newBulkString("scan"),
+		*newBulkString(strconv.FormatUint(uint64(1)<<48|10, 10)),
+	))
+	scanReq, err := newScanRequest(raw)
+	assert.NoError(t, err)
+
+	nodeIdx, simpleReq := scanReq.Convert()
+	assert.EqualValues(t, 1, nodeIdx)
+	assert.NotNil(t, simpleReq)
+	assert.Equal(
+		t, []byte("10"),
+		simpleReq.Body().Array[1].Text,
+	)
+}
+
+func TestScanRequestResponse(t *testing.T) {
+	t.Run("wrong type", func(t *testing.T) {
+		raw := newRawRequest(newArray(
+			*newBulkString("scan"),
+			*newBulkString(strconv.FormatUint(uint64(1)<<48|10, 10)),
+		))
+		scanReq, _ := newScanRequest(raw)
+
+		_, simpleReq := scanReq.Convert()
+		resp := newError("blabla")
+		time.AfterFunc(time.Millisecond*100, func() {
+			simpleReq.SetResponse(resp)
+		})
+
+		raw.Wait()
+		assert.Equal(t, resp, raw.Response())
+	})
+
+	t.Run("invalid cursor", func(t *testing.T) {
+		raw := newRawRequest(newArray(
+			*newBulkString("scan"),
+			*newBulkString(strconv.FormatUint(uint64(1)<<48|10, 10)),
+		))
+		scanReq, _ := newScanRequest(raw)
+
+		_, simpleReq := scanReq.Convert()
+		resp := newArray(*newBulkString("abc"))
+		time.AfterFunc(time.Millisecond*100, func() {
+			simpleReq.SetResponse(resp)
+		})
+
+		raw.Wait()
+		assert.Equal(t, resp, raw.Response())
+	})
+
+	t.Run("normal", func(t *testing.T) {
+		raw := newRawRequest(newArray(
+			*newBulkString("scan"),
+			*newBulkString(strconv.FormatUint(uint64(1)<<48|10, 10)),
+		))
+		scanReq, _ := newScanRequest(raw)
+
+		_, simpleReq := scanReq.Convert()
+		time.AfterFunc(time.Millisecond*100, func() {
+			// mark the iteration finished on current node.
+			simpleReq.SetResponse(respScanTerm)
+		})
+
+		raw.Wait()
+		nextCursor := uint64(2)<<48 | 0
+		assert.Equal(
+			t, []byte(strconv.FormatUint(nextCursor, 10)),
+			raw.Response().Array[0].Text,
+		)
+	})
 }

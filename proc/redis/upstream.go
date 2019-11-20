@@ -19,7 +19,6 @@ import (
 	"errors"
 	"io"
 	"net"
-	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -109,21 +108,8 @@ func (u *upstream) Stop() {
 	<-u.done
 }
 
-func (u *upstream) loadClients() map[string]*client {
-	return u.clients.Load().(map[string]*client)
-}
-
-func (u *upstream) cloneClients() map[string]*client {
-	clients := u.loadClients()
-	cpy := make(map[string]*client, len(clients))
-	for k, v := range clients {
-		cpy[k] = v
-	}
-	return cpy
-}
-
-func (u *upstream) updateClients(clients map[string]*client) {
-	u.clients.Store(clients)
+func (u *upstream) Hosts() []*host.Host {
+	return u.hosts.Healthy()
 }
 
 func (u *upstream) MakeRequest(key []byte, req *simpleRequest) {
@@ -132,51 +118,7 @@ func (u *upstream) MakeRequest(key []byte, req *simpleRequest) {
 		req.SetResponse(newError(err.Error()))
 		return
 	}
-	u.makeRequestToHost(addr, req)
-}
-
-var respScanTerm = newArray([]RespValue{
-	*newBulkBytes([]byte("0")),
-	*newArray([]RespValue{}),
-})
-
-func (u *upstream) MakeScanRequest(cursor uint64, req *simpleRequest) {
-	// parse cursor
-	nodeIdx, nodeCursor := parseCursor(uint64(cursor))
-	hosts := u.hosts.Healthy()
-
-	// already scanned all the nodes.
-	if nodeIdx >= uint16(len(hosts)) {
-		req.SetResponse(respScanTerm)
-		return
-	}
-
-	// set cursor value to the real node cursor
-	req.Body().Array[1].Text = []byte(strconv.FormatUint(nodeCursor, 10))
-	// register hook to modify the next cursor in response.
-	req.RegisterHook(func(req *simpleRequest) {
-		resp := req.Response()
-		// unexpected response
-		if resp.Type != Array {
-			return
-		}
-
-		// insert node index into the cursor value.
-		nodeNextCursor, err := btoi64(resp.Array[1].Text)
-		if err != nil {
-			return
-		}
-		// the iteration finished in current node, should scan the next.
-		if nodeNextCursor == 0 {
-			nodeIdx++
-		}
-		nextCursor := genCursor(nodeIdx, uint64(nodeNextCursor))
-		resp.Array[0].Text = []byte(strconv.FormatUint(nextCursor, 10))
-	})
-
-	// send request
-	host := hosts[nodeIdx]
-	u.makeRequestToHost(host.Addr, req)
+	u.MakeRequestToHost(addr, req)
 }
 
 func (u *upstream) chooseHost(key []byte) (string, error) {
@@ -194,7 +136,7 @@ func (u *upstream) chooseHost(key []byte) (string, error) {
 	return host.Addr, nil
 }
 
-func (u *upstream) makeRequestToHost(addr string, req *simpleRequest) {
+func (u *upstream) MakeRequestToHost(addr string, req *simpleRequest) {
 	// request metrics
 	u.stats.RqTotal.Inc()
 	req.RegisterHook(func(req *simpleRequest) {
@@ -306,19 +248,36 @@ func (u *upstream) resetAllClients() {
 	}
 }
 
+func (u *upstream) loadClients() map[string]*client {
+	return u.clients.Load().(map[string]*client)
+}
+
+func (u *upstream) cloneClients() map[string]*client {
+	clients := u.loadClients()
+	cpy := make(map[string]*client, len(clients))
+	for k, v := range clients {
+		cpy[k] = v
+	}
+	return cpy
+}
+
+func (u *upstream) updateClients(clients map[string]*client) {
+	u.clients.Store(clients)
+}
+
 func (u *upstream) handleRedirection(req *simpleRequest, resp *RespValue) {
 	err := strings.Split(string(resp.Text), " ")
 	hostAddr := err[2]
 	switch strings.ToLower(err[0]) {
 	case MOVED:
 		u.stats.Counter("moved").Inc()
-		u.makeRequestToHost(hostAddr, req)
+		u.MakeRequestToHost(hostAddr, req)
 	case ASK:
-		askingReq := newSimpleRequest(newArray([]RespValue{
+		askingReq := newSimpleRequest(newArray(
 			*newBulkString(ASKING),
-		}))
-		u.makeRequestToHost(hostAddr, askingReq)
-		u.makeRequestToHost(hostAddr, req)
+		))
+		u.MakeRequestToHost(hostAddr, askingReq)
+		u.MakeRequestToHost(hostAddr, req)
 	}
 	u.triggerSlotsRefresh()
 }
@@ -397,17 +356,17 @@ func (u *upstream) randomHost() (*host.Host, error) {
 }
 
 func (u *upstream) doSlotsRefresh() error {
-	v := newArray([]RespValue{
+	v := newArray(
 		*newBulkString("cluster"),
 		*newBulkString("nodes"),
-	})
+	)
 	req := newSimpleRequest(v)
 
 	h, err := u.randomHost()
 	if err != nil {
 		return err
 	}
-	u.makeRequestToHost(h.Addr, req)
+	u.MakeRequestToHost(h.Addr, req)
 
 	// wait done
 	req.Wait()

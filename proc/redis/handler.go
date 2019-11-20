@@ -209,27 +209,31 @@ func handleSlowlog(u *upstream, req *rawRequest) {
 
 var (
 	invalidCursor = "invalid cursor"
+
+	respScanTerm = newArray(
+		*newBulkString("0"),
+		*newArray([]RespValue{}...),
+	)
 )
 
 func handleScan(u *upstream, req *rawRequest) {
-	// SCAN cursor [MATCH pattern] [COUNT count] [TYPE type]
-	body := req.Body()
-	if len(body.Array) < 2 {
-		req.SetResponse(newError(invalidRequest))
-		return
-	}
-
-	cursor, err := btoi64(body.Array[1].Text)
+	scanReq, err := newScanRequest(req)
 	if err != nil {
-		req.SetResponse(newError(invalidCursor))
+		req.SetResponse(newError(err.Error()))
 		return
 	}
 
-	// TODO: limit the count
+	// convert to simple request.
+	nodeIdx, simpleReq := scanReq.Convert()
+	hosts := u.Hosts()
 
-	simpleReq := newSimpleRequest(body)
-	simpleReq.RegisterHook(func(simpleReq *simpleRequest) {
-		req.SetResponse(simpleReq.Response())
-	})
-	u.MakeScanRequest(uint64(cursor), simpleReq)
+	// check if already scanned all the nodes.
+	if nodeIdx >= uint16(len(hosts)) {
+		req.SetResponse(respScanTerm)
+		return
+	}
+
+	// send request to the specified node.
+	host := hosts[nodeIdx]
+	u.MakeRequestToHost(host.Addr, simpleReq)
 }
