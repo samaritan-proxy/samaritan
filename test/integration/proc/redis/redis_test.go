@@ -17,6 +17,7 @@ package redis
 import (
 	"net"
 	"reflect"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -3032,4 +3033,67 @@ func testPipeline(t *testing.T) {
 	}
 	_, err := c.Receive()
 	assert.NoError(t, err)
+}
+
+func TestScan(t *testing.T) {
+	// TODO: fix hardcode
+	nodeAddrs := []string{
+		"127.0.0.1:8000",
+		"127.0.0.1:8001",
+		"127.0.0.1:8002",
+	}
+	nodeClients := make([]*Client, 0, 3)
+	for _, nodeAddr := range nodeAddrs {
+		nodeClient, err := newClientWithAuth("tcp", nodeAddr)
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		nodeClients = append(nodeClients, nodeClient)
+	}
+
+	// flush all
+	for _, nodeClient := range nodeClients {
+		_, err := nodeClient.Exec("FLUSHALL")
+		if err != nil {
+			t.Error(err)
+			return
+		}
+	}
+	time.Sleep(time.Second)
+
+	// add keys to different node.
+	keys := []string{
+		"b", // slot is 3300, will be saved in the first node.
+		"c", // slot is 7365, will be saved in the second node.
+		"d", // slot is 11298, will be saved in the third node.
+	}
+	for i, key := range keys {
+		client := nodeClients[i]
+		if _, err := client.Set(key, "blabla"); err != nil {
+			t.Error(err)
+			return
+		}
+	}
+
+	var (
+		scannedKeys []string
+		cursor      uint64
+	)
+	for {
+		keys, nextCursor, err := c.Scan(cursor, "", 0)
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		scannedKeys = append(scannedKeys, keys...)
+		if nextCursor == 0 {
+			break
+		}
+		cursor = nextCursor
+	}
+	assert.Equal(t, 3, len(scannedKeys))
+	sort.Strings(keys)
+	sort.Strings(scannedKeys)
+	assert.Equal(t, keys, scannedKeys)
 }
