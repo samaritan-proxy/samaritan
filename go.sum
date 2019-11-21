@@ -37,12 +37,8 @@ github.com/juju/loggo v0.0.0-20190526231331-6e530bcce5d8 h1:UUHMLvzt/31azWTN/ifG
 github.com/juju/loggo v0.0.0-20190526231331-6e530bcce5d8/go.mod h1:vgyd7OREkbtVEN/8IXZe5Ooef3LQePvuBm9UWj6ZL8U=
 github.com/kavu/go_reuseport v1.4.0 h1:YIp/96RZ3sJfn0LN+FFkkXIq3H3dfVOdRUtNejhDcxc=
 github.com/kavu/go_reuseport v1.4.0/go.mod h1:CG8Ee7ceMFSMnx/xr25Vm0qXaj2Z4i5PWoUx+JZ5/CU=
-github.com/kirk91/stats v0.0.5-0.20191031082039-d24ccf23d104 h1:d5XUbfBJBgB6CbV2LldIrz7acAgl4KZsm6NxGi5ydyQ=
-github.com/kirk91/stats v0.0.5-0.20191031082039-d24ccf23d104/go.mod h1:nEi2z+QVx+VFBqiOv8kFvz7W1QysihMd7denyKSaGlQ=
-github.com/kirk91/stats v0.0.5-0.20191113090643-6f3abf827cf1 h1:z+Jatz+n8lmEJk3yE+zcCWqhEwuYCNhFt4EvIRcPjhE=
-github.com/kirk91/stats v0.0.5-0.20191113090643-6f3abf827cf1/go.mod h1:nEi2z+QVx+VFBqiOv8kFvz7W1QysihMd7denyKSaGlQ=
-github.com/kirk91/stats v0.0.5-0.20191120094208-f8401de1e430 h1:jWvbQ2osxQ+rwQ/wl2Wf0isBW0y6/+bZEd7UlFR+FZE=
-github.com/kirk91/stats v0.0.5-0.20191120094208-f8401de1e430/go.mod h1:nEi2z+QVx+VFBqiOv8kFvz7W1QysihMd7denyKSaGlQ=
+github.com/kirk91/stats v0.0.5-0.20191121063046-9621d5a6d574 h1:L8yhfuKEBD3YVoEFU+noZTPR4XZ7zQ4ox8v9q/G3FFM=
+github.com/kirk91/stats v0.0.5-0.20191121063046-9621d5a6d574/go.mod h1:nEi2z+QVx+VFBqiOv8kFvz7W1QysihMd7denyKSaGlQ=
 github.com/kirk91/statsd v0.0.0-20190123111500-eca5e2a6416c h1:xiy939HvpMPG4J5Qg6gTrtSEz1xQAUHlvS8m/jRURSE=
 github.com/kirk91/statsd v0.0.0-20190123111500-eca5e2a6416c/go.mod h1:8n7YPJ8bZPkDa2ffJkmGFJxZGr/qHFeVuXhuCkj6E6M=
 github.com/kisielk/errcheck v1.2.0/go.mod h1:/BMXB+zMLi60iA8Vv6Ksmxu/1UDYcXs4uQLJ+jE2L00=
