@@ -13,7 +13,7 @@ require (
 	github.com/gomodule/redigo v2.0.0+incompatible
 	github.com/gorilla/mux v1.7.3
 	github.com/kavu/go_reuseport v1.4.0
-	github.com/kirk91/stats v0.0.5-0.20191121063046-9621d5a6d574
+	github.com/kirk91/stats v0.0.5-0.20191121064423-8a4d70fadb55
 	github.com/stretchr/testify v1.4.0
 	github.com/tevino/log v0.0.0-20191011110715-a95875091fd9
 	github.com/tevino/tcp-shaker v0.0.0-20190306083616-9f5b7a96d888
