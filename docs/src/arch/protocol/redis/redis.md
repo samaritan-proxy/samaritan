@@ -5,7 +5,7 @@ Redis proc in samaritan serves as a [Redis Cluster] Proxy just as [corvus](https
 >Most redis client implementations don't support redis cluster. We have a lot of services relying on redis, which are written in Python, Java, Go, Nodejs etc.
 >It's hard to provide redis client libraries for multiple languages without breaking compatibilities. We used twemproxy before, but it relies on sentinel
 >for high availabity, it also requires restarting to add or remove backend redis instances, which causes service interruption.
->And twemproxy is single threaded, we have to deploy multiple twemproxy instances for large number of clients, which causes the sa headaches.
+>And twemproxy is single threaded, we have to deploy multiple twemproxy instances for large number of clients, which causes the ops headaches.
 
 ## Statistics
 
