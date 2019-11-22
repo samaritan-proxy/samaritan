@@ -51,6 +51,7 @@ sequenceDiagram
 * `INFO`, `TIME`: won't be forwarded to backend redis, information collected in proxy
    will be returned.
 * `SELECT`: ignored if index is `0`, won't be forwarded.
+* `SCAN`: scan one by one until all of them are scanned.
 
 ### Restricted
 
