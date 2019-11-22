@@ -203,10 +203,6 @@ func handleInfo(u *upstream, req *rawRequest) {
 	})
 }
 
-func handleSlowlog(u *upstream, req *rawRequest) {
-	// TODO: implement it
-}
-
 var (
 	invalidCursor = "invalid cursor"
 
