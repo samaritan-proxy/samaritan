@@ -284,6 +284,17 @@ func (d *dynamicSource) streamSvcConfigs(ctx context.Context) {
 
 	for {
 		var subscribe, unsubscribe []string
+		select {
+		case svc := <-d.svcCfgSubCh:
+			subscribe = append(subscribe, svc.Name)
+		case svc := <-d.svcCfgUnsubCh:
+			unsubscribe = append(unsubscribe, svc.Name)
+		case <-recvDone:
+			return
+		}
+
+		// batch
+		// TODO: limit the size
 		for {
 			select {
 			case svc := <-d.svcCfgSubCh:
@@ -292,21 +303,8 @@ func (d *dynamicSource) streamSvcConfigs(ctx context.Context) {
 				unsubscribe = append(unsubscribe, svc.Name)
 			case <-recvDone:
 				return
-			}
-
-			// batch
-			// TODO: limit the size
-			for {
-				select {
-				case svc := <-d.svcCfgSubCh:
-					subscribe = append(subscribe, svc.Name)
-				case svc := <-d.svcCfgUnsubCh:
-					unsubscribe = append(unsubscribe, svc.Name)
-				case <-recvDone:
-					return
-				default:
-					goto SEND
-				}
+			default:
+				goto SEND
 			}
 		}
 
