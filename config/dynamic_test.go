@@ -190,7 +190,6 @@ func TestDynamicSourceStreamSvcConfigs(t *testing.T) {
 	// close the discovery service client
 	time.AfterFunc(time.Millisecond*100, func() {
 		close(quit)
-		close(d.quit)
 	})
 	d.streamSvcConfigs(context.Background())
 	assert.True(t, hookCalled)
@@ -252,7 +251,6 @@ func TestDynamicSourceStreamSvcEndpoints(t *testing.T) {
 	// close the discovery service client
 	time.AfterFunc(time.Millisecond*100, func() {
 		close(quit)
-		close(d.quit)
 	})
 	d.streamSvcEndpoints(context.Background())
 	assert.True(t, hookCalled)

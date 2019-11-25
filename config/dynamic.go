@@ -195,7 +195,6 @@ func (d *dynamicSource) streamSvcs(ctx context.Context) {
 		}
 
 		// TODO: validate resp
-
 		if d.svcHook != nil {
 			d.svcHook(resp.Added, resp.Removed)
 		}
@@ -251,70 +250,75 @@ func (d *dynamicSource) StreamSvcConfigs() {
 }
 
 func (d *dynamicSource) streamSvcConfigs(ctx context.Context) {
+	// create stream client
 	stream, err := d.c.StreamSvcConfigs(ctx)
 	if err != nil {
 		logger.Warnf("Fail to create stream client: %v", err)
 		return
 	}
 
-	sendDone := make(chan struct{})
+	recvDone := make(chan struct{})
 	defer func() {
-		<-sendDone
+		// wait recv goroutine done
+		<-recvDone
 	}()
 
 	go func() {
-		defer close(sendDone)
+		defer close(recvDone)
 		for {
-			var subscribe, unsubscribe []string
+			resp, err := stream.Recv()
+			if err != nil {
+				logger.Warnf("Recv failed: %v", err)
+				return
+			}
+
+			// TODO: validate resp
+			if d.svcCfgHook == nil {
+				continue
+			}
+			for svcName, svcConfig := range resp.Updated {
+				d.svcCfgHook(svcName, svcConfig)
+			}
+		}
+	}()
+
+	for {
+		var subscribe, unsubscribe []string
+		for {
 			select {
 			case svc := <-d.svcCfgSubCh:
 				subscribe = append(subscribe, svc.Name)
 			case svc := <-d.svcCfgUnsubCh:
 				unsubscribe = append(unsubscribe, svc.Name)
-			case <-d.quit:
+			case <-recvDone:
 				return
 			}
 
 			// batch
-			// TODO: limit the batch size
+			// TODO: limit the size
 			for {
 				select {
 				case svc := <-d.svcCfgSubCh:
 					subscribe = append(subscribe, svc.Name)
 				case svc := <-d.svcCfgUnsubCh:
 					unsubscribe = append(unsubscribe, svc.Name)
+				case <-recvDone:
+					return
 				default:
 					goto SEND
 				}
 			}
-
-		SEND:
-			req := &api.SvcConfigDiscoveryRequest{
-				SvcNamesSubscribe:   subscribe,
-				SvcNamesUnsubscribe: unsubscribe,
-			}
-			err := stream.Send(req)
-			if err != nil {
-				logger.Warnf("Send failed: %v", err)
-				return
-			}
 		}
-	}()
 
-	for {
-		resp, err := stream.Recv()
+	SEND:
+		req := &api.SvcConfigDiscoveryRequest{
+			SvcNamesSubscribe:   subscribe,
+			SvcNamesUnsubscribe: unsubscribe,
+		}
+		err := stream.Send(req)
 		if err != nil {
-			logger.Warnf("Recv failed: %v", err)
+			logger.Warnf("Send failed: %v", err)
 			return
-		}
-
-		// TODO: validate resp
-
-		if d.svcCfgHook == nil {
-			continue
-		}
-		for svcName, svcConfig := range resp.Updated {
-			d.svcCfgHook(svcName, svcConfig)
 		}
 	}
 }
@@ -341,68 +345,70 @@ func (d *dynamicSource) StreamSvcEndpoints() {
 }
 
 func (d *dynamicSource) streamSvcEndpoints(ctx context.Context) {
+	// make the stream client
 	stream, err := d.c.StreamSvcEndpoints(ctx)
 	if err != nil {
 		logger.Warnf("Fail to create stream client: %v", err)
 		return
 	}
 
-	sendDone := make(chan struct{})
+	recvDone := make(chan struct{})
 	defer func() {
-		<-sendDone
+		// wait recv goroutine done
+		<-recvDone
 	}()
 
 	go func() {
-		defer close(sendDone)
+		defer close(recvDone)
 		for {
-			var subscribe, unsubscribe []string
-			select {
-			case svc := <-d.svcEtSubCh:
-				subscribe = append(subscribe, svc.Name)
-			case svc := <-d.svcEtUnsubCh:
-				unsubscribe = append(unsubscribe, svc.Name)
-			case <-d.quit:
-				return
-			}
-
-			// batch
-			// TODO: limit the batch size
-			for {
-				select {
-				case svc := <-d.svcEtSubCh:
-					subscribe = append(subscribe, svc.Name)
-				case svc := <-d.svcEtUnsubCh:
-					unsubscribe = append(unsubscribe, svc.Name)
-				default:
-					goto SEND
-				}
-			}
-
-		SEND:
-			req := &api.SvcEndpointDiscoveryRequest{
-				SvcNamesSubscribe:   subscribe,
-				SvcNamesUnsubscribe: unsubscribe,
-			}
-			err := stream.Send(req)
+			resp, err := stream.Recv()
 			if err != nil {
-				logger.Warnf("Send failed: %v", err)
+				logger.Warnf("Recv failed: %v", err)
 				return
+			}
+
+			// TODO: validate resp
+			if d.svcEtHook != nil {
+				d.svcEtHook(resp.SvcName, resp.Added, resp.Removed)
 			}
 		}
 	}()
 
 	for {
-		resp, err := stream.Recv()
-		if err != nil {
-			logger.Warnf("Recv failed: %v", err)
+		var subscribe, unsubscribe []string
+		select {
+		case svc := <-d.svcEtSubCh:
+			subscribe = append(subscribe, svc.Name)
+		case svc := <-d.svcEtUnsubCh:
+			unsubscribe = append(unsubscribe, svc.Name)
+		case <-recvDone:
 			return
 		}
 
-		// TODO: validate resp
-
-		if d.svcEtHook == nil {
-			continue
+		// batch
+		// TODO: limit the size
+		for {
+			select {
+			case svc := <-d.svcEtSubCh:
+				subscribe = append(subscribe, svc.Name)
+			case svc := <-d.svcEtUnsubCh:
+				unsubscribe = append(unsubscribe, svc.Name)
+			case <-recvDone:
+				return
+			default:
+				goto SEND
+			}
 		}
-		d.svcEtHook(resp.SvcName, resp.Added, resp.Removed)
+
+	SEND:
+		req := &api.SvcEndpointDiscoveryRequest{
+			SvcNamesSubscribe:   subscribe,
+			SvcNamesUnsubscribe: unsubscribe,
+		}
+		err := stream.Send(req)
+		if err != nil {
+			logger.Warnf("Send failed: %v", err)
+			return
+		}
 	}
 }
