@@ -17,7 +17,6 @@ package redis
 import (
 	"net"
 	"reflect"
-	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -3092,8 +3091,5 @@ func TestScan(t *testing.T) {
 		}
 		cursor = nextCursor
 	}
-	assert.Equal(t, 3, len(scannedKeys))
-	sort.Strings(keys)
-	sort.Strings(scannedKeys)
-	assert.Equal(t, keys, scannedKeys)
+	assert.ElementsMatch(t, keys, scannedKeys)
 }
