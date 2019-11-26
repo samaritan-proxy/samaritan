@@ -66,7 +66,7 @@ func (r *rpcMsg) Matches(msg interface{}) bool {
 }
 
 func (r *rpcMsg) String() string {
-	return fmt.Sprintf("is %s", r.msg)
+	return fmt.Sprintf("%s", r.msg)
 }
 
 func newTestInstance() *common.Instance {
@@ -77,35 +77,50 @@ func newTestInstance() *common.Instance {
 	}
 }
 
+func makeSvcDiscoveryResponse(added, removed []*service.Service) *api.SvcDiscoveryResponse {
+	return &api.SvcDiscoveryResponse{
+		Added:   added,
+		Removed: removed,
+	}
+}
+
+func makeService(name string) *service.Service {
+	return &service.Service{
+		Name: name,
+	}
+}
+
 func TestDynamicSourceStreamSvcs(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
 	b := new(bootstrap.Bootstrap)
 	b.Instance = newTestInstance()
-	quit := make(chan struct{})
 
-	// mock discovery service client and stream
-	req := &api.SvcDiscoveryRequest{Instance: b.Instance}
+	addedSvcs := []*service.Service{makeService("foo")}
+	removedSvcs := []*service.Service{makeService("bar")}
+
+	// mock stream
 	stream := NewMockDiscoveryService_StreamSvcsClient(ctrl)
-	addedSvcs := []*service.Service{
-		{Name: "foo"},
-	}
-	removedSvcs := []*service.Service{
-		{Name: "bar"},
-	}
-	stream.EXPECT().Recv().Return(&api.SvcDiscoveryResponse{
-		Added:   addedSvcs,
-		Removed: removedSvcs,
-	}, nil)
+	streamQuitCh := make(chan struct{})
+	abortStream := func() { close(streamQuitCh) }
+	recvTimes := 0
 	stream.EXPECT().Recv().DoAndReturn(func() (*api.SvcDiscoveryResponse, error) {
-		<-quit
+		recvTimes++
+		if recvTimes < 2 {
+			return makeSvcDiscoveryResponse(addedSvcs, removedSvcs), nil
+		}
+		// wait the stream closed
+		<-streamQuitCh
 		return nil, io.EOF
-	})
+	}).Times(2)
+
+	// mock client
 	c := NewMockDiscoveryServiceClient(ctrl)
+	req := &api.SvcDiscoveryRequest{Instance: b.Instance}
 	c.EXPECT().StreamSvcs(gomock.Any(), &rpcMsg{msg: req}).Return(stream, nil)
 
-	// mock discovery service client facotory
+	// mock client facotory
 	factory := newDiscoveryServiceClientFacotry(c, nil)
 	rollback := mockNewDiscoveryServiceClient(factory)
 	defer rollback()
@@ -132,10 +147,8 @@ func TestDynamicSourceStreamSvcs(t *testing.T) {
 		assert.Contains(t, removedSvcs, svc)
 	}
 
-	// close the discovery service client
-	time.AfterFunc(time.Millisecond*100, func() {
-		close(quit)
-	})
+	// abort stream
+	time.AfterFunc(time.Millisecond*100, abortStream)
 	d.streamSvcs(context.Background())
 
 	// assert hooks
@@ -144,29 +157,40 @@ func TestDynamicSourceStreamSvcs(t *testing.T) {
 	assert.True(t, svcUnsubHookCalled)
 }
 
+func makeSvcConfigDiscoveryResponse(configs map[string]*service.Config) *api.SvcConfigDiscoveryResponse {
+	return &api.SvcConfigDiscoveryResponse{
+		Updated: configs,
+	}
+}
+
 func TestDynamicSourceStreamSvcConfigs(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	b := new(bootstrap.Bootstrap)
-	quit := make(chan struct{})
-
-	// mock discovery service client and stream
+	// mock stream
 	stream := NewMockDiscoveryService_StreamSvcConfigsClient(ctrl)
+	streamQuitCh := make(chan struct{})
+	abortStream := func() {
+		close(streamQuitCh)
+	}
+	// mock send method
 	req := &api.SvcConfigDiscoveryRequest{
 		SvcNamesSubscribe:   []string{"foo"},
 		SvcNamesUnsubscribe: []string{"bar", "zoo"},
 	}
 	stream.EXPECT().Send(&rpcMsg{msg: req}).Return(nil)
-	stream.EXPECT().Recv().Return(&api.SvcConfigDiscoveryResponse{
-		Updated: map[string]*service.Config{
-			"foo": nil,
-		},
-	}, nil)
+	// mock recv method
+	recvTimes := 0
 	stream.EXPECT().Recv().DoAndReturn(func() (*api.SvcConfigDiscoveryResponse, error) {
-		<-quit
+		recvTimes++
+		if recvTimes < 2 {
+			return makeSvcConfigDiscoveryResponse(map[string]*service.Config{"foo": nil}), nil
+		}
+		<-streamQuitCh
 		return nil, io.EOF
-	})
+	}).Times(2)
+
+	// mock client
 	c := NewMockDiscoveryServiceClient(ctrl)
 	c.EXPECT().StreamSvcConfigs(gomock.Any()).Return(stream, nil)
 
@@ -175,6 +199,7 @@ func TestDynamicSourceStreamSvcConfigs(t *testing.T) {
 	rollback := mockNewDiscoveryServiceClient(factory)
 	defer rollback()
 
+	b := new(bootstrap.Bootstrap)
 	d, err := newDynamicSource(b)
 	assert.NoError(t, err)
 
@@ -188,11 +213,26 @@ func TestDynamicSourceStreamSvcConfigs(t *testing.T) {
 	d.unsubscribeSvc(&service.Service{Name: "zoo"})
 
 	// close the discovery service client
-	time.AfterFunc(time.Millisecond*100, func() {
-		close(quit)
-	})
+	time.AfterFunc(time.Millisecond*100, abortStream)
 	d.streamSvcConfigs(context.Background())
 	assert.True(t, hookCalled)
+}
+
+func makeEndpoint(ip string, port uint32) *service.Endpoint {
+	return &service.Endpoint{
+		Address: &common.Address{
+			Ip:   ip,
+			Port: port,
+		},
+	}
+}
+
+func makeSvcEndpointDiscoveryResponse(svcName string, added, removed []*service.Endpoint) *api.SvcEndpointDiscoveryResponse {
+	return &api.SvcEndpointDiscoveryResponse{
+		SvcName: svcName,
+		Added:   added,
+		Removed: removed,
+	}
 }
 
 func TestDynamicSourceStreamSvcEndpoints(t *testing.T) {
@@ -200,36 +240,43 @@ func TestDynamicSourceStreamSvcEndpoints(t *testing.T) {
 	defer ctrl.Finish()
 
 	b := new(bootstrap.Bootstrap)
-	quit := make(chan struct{})
+	addedEndpoints := []*service.Endpoint{
+		makeEndpoint("127.0.0.1", 8888),
+		makeEndpoint("127.0.0.1", 8889),
+	}
+	removedEndpoints := []*service.Endpoint{
+		makeEndpoint("127.0.0.1", 9000),
+		makeEndpoint("127.0.0.1", 9001),
+	}
 
-	// mock discovery service client and stream
+	// mock stream
 	stream := NewMockDiscoveryService_StreamSvcEndpointsClient(ctrl)
+	streamQuitCh := make(chan struct{})
+	abortStream := func() {
+		close(streamQuitCh)
+	}
+	// mock send method
 	req := &api.SvcEndpointDiscoveryRequest{
 		SvcNamesSubscribe:   []string{"foo"},
 		SvcNamesUnsubscribe: []string{"bar", "zoo"},
 	}
 	stream.EXPECT().Send(&rpcMsg{msg: req}).Return(nil)
-	addedEndpoints := []*service.Endpoint{
-		{Address: &common.Address{Ip: "127.0.0.1", Port: 8888}},
-		{Address: &common.Address{Ip: "127.0.0.1", Port: 8889}},
-	}
-	removedEndpoints := []*service.Endpoint{
-		{Address: &common.Address{Ip: "127.0.0.1", Port: 9000}},
-		{Address: &common.Address{Ip: "127.0.0.1", Port: 9001}},
-	}
-	stream.EXPECT().Recv().Return(&api.SvcEndpointDiscoveryResponse{
-		SvcName: "foo",
-		Added:   addedEndpoints,
-		Removed: removedEndpoints,
-	}, nil)
+	// mock recv method
+	recvTimes := 0
 	stream.EXPECT().Recv().DoAndReturn(func() (*api.SvcEndpointDiscoveryResponse, error) {
-		<-quit
+		recvTimes++
+		if recvTimes < 2 {
+			return makeSvcEndpointDiscoveryResponse("foo", addedEndpoints, removedEndpoints), nil
+		}
+		<-streamQuitCh
 		return nil, io.EOF
-	})
+	}).Times(2)
+
+	// mock client
 	c := NewMockDiscoveryServiceClient(ctrl)
 	c.EXPECT().StreamSvcEndpoints(gomock.Any()).Return(stream, nil)
 
-	// mock discovery service client facotory
+	// mock client factory
 	factory := newDiscoveryServiceClientFacotry(c, nil)
 	rollback := mockNewDiscoveryServiceClient(factory)
 	defer rollback()
@@ -237,6 +284,7 @@ func TestDynamicSourceStreamSvcEndpoints(t *testing.T) {
 	d, err := newDynamicSource(b)
 	assert.NoError(t, err)
 
+	// register hook
 	hookCalled := false
 	d.SetSvcEndpointHook(func(svcName string, added, removed []*service.Endpoint) {
 		hookCalled = true
@@ -249,9 +297,7 @@ func TestDynamicSourceStreamSvcEndpoints(t *testing.T) {
 	d.unsubscribeSvc(&service.Service{Name: "zoo"})
 
 	// close the discovery service client
-	time.AfterFunc(time.Millisecond*100, func() {
-		close(quit)
-	})
+	time.AfterFunc(time.Millisecond*100, abortStream)
 	d.streamSvcEndpoints(context.Background())
 	assert.True(t, hookCalled)
 }

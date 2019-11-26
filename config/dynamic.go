@@ -229,11 +229,14 @@ func (d *dynamicSource) unsubscribeSvc(svc *service.Service) {
 }
 
 func (d *dynamicSource) StreamSvcConfigs() {
+	defer func() {
+		logger.Debugf("StreamSvcConfigs done")
+	}()
+
 	for {
 		d.streamSvcConfigs(context.Background())
 		select {
 		case <-d.quit:
-			logger.Debugf("StreamSvcConfigs done")
 			return
 		default:
 		}
@@ -322,11 +325,14 @@ func (d *dynamicSource) streamSvcConfigs(ctx context.Context) {
 }
 
 func (d *dynamicSource) StreamSvcEndpoints() {
+	defer func() {
+		logger.Debugf("StreamSvcEndpoints done")
+	}()
+
 	for {
 		d.streamSvcEndpoints(context.Background())
 		select {
 		case <-d.quit:
-			logger.Debugf("StreamSvcEndpoints done")
 			return
 		default:
 		}
