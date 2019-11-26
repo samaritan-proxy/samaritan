@@ -17,6 +17,7 @@ package redis
 import (
 	"errors"
 	"fmt"
+	"strconv"
 	"time"
 
 	"go.uber.org/atomic"
@@ -322,4 +323,75 @@ func (r *sumResultRequest) setResponse() {
 	} else {
 		r.raw.SetResponse(newError(fmt.Sprintf("finished with %d error(s)", errCount)))
 	}
+}
+
+type scanRequest struct {
+	raw        *rawRequest
+	nodeIdx    uint16
+	nodeCursor uint64
+}
+
+func newScanRequest(raw *rawRequest) (*scanRequest, error) {
+	// SCAN cursor [MATCH pattern] [COUNT count] [TYPE type]
+	body := raw.Body()
+	if len(body.Array) < 2 {
+		return nil, errors.New(invalidRequest)
+	}
+
+	// TODO: limit count
+
+	// parse cursor
+	cursor, err := btoi64(body.Array[1].Text)
+	if err != nil {
+		return nil, errors.New(invalidCursor)
+	}
+
+	r := &scanRequest{raw: raw}
+	r.nodeIdx, r.nodeCursor = r.parseCursor(uint64(cursor))
+	return r, nil
+}
+
+func (r *scanRequest) Convert() (nodeIdx uint16, sreq *simpleRequest) {
+	sreq = newSimpleRequest(r.raw.Body())
+	// register hook to bind response to raw request.
+	sreq.RegisterHook(func(req *simpleRequest) {
+		r.raw.SetResponse(req.Response())
+	})
+
+	// change cursor value to the real node cursor
+	sreq.Body().Array[1].Text = []byte(strconv.FormatUint(r.nodeCursor, 10))
+	// register hook to modify the next cursor in response.
+	sreq.RegisterHook(func(req *simpleRequest) {
+		resp := req.Response()
+		// unexpected response
+		if resp.Type != Array {
+			return
+		}
+
+		// insert node index into the cursor value.
+		nodeNextCursor, err := btoi64(resp.Array[0].Text)
+		if err != nil {
+			return
+		}
+		// the iteration finished in current node, should scan the next.
+		if nodeNextCursor == 0 {
+			r.nodeIdx++
+		}
+		nextCursor := r.genCursor(r.nodeIdx, uint64(nodeNextCursor))
+		resp.Array[0].Text = []byte(strconv.FormatUint(nextCursor, 10))
+	})
+	return r.nodeIdx, sreq
+}
+
+func (r *scanRequest) parseCursor(cursor uint64) (uint16, uint64) {
+	nodeIdx := uint16(cursor >> 48)
+	nodeCursor := cursor & 0xffffffffffff
+	return nodeIdx, nodeCursor
+}
+
+func (r *scanRequest) genCursor(nodeIdx uint16, nodeCursor uint64) uint64 {
+	// The highest 16 bits represent node index, the left represent node cursor.
+	// The maximum value that 48 bits can represent is 2^47-1, which is enough
+	// for an instance of redis cluster.
+	return uint64(nodeIdx)<<48 | nodeCursor
 }

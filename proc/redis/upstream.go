@@ -108,21 +108,8 @@ func (u *upstream) Stop() {
 	<-u.done
 }
 
-func (u *upstream) loadClients() map[string]*client {
-	return u.clients.Load().(map[string]*client)
-}
-
-func (u *upstream) loadClientsCopy() map[string]*client {
-	clients := u.loadClients()
-	cpy := make(map[string]*client, len(clients))
-	for k, v := range clients {
-		cpy[k] = v
-	}
-	return cpy
-}
-
-func (u *upstream) updateClients(clients map[string]*client) {
-	u.clients.Store(clients)
+func (u *upstream) Hosts() []*host.Host {
+	return u.hosts.Healthy()
 }
 
 func (u *upstream) MakeRequest(key []byte, req *simpleRequest) {
@@ -131,7 +118,7 @@ func (u *upstream) MakeRequest(key []byte, req *simpleRequest) {
 		req.SetResponse(newError(err.Error()))
 		return
 	}
-	u.makeRequestToHost(addr, req)
+	u.MakeRequestToHost(addr, req)
 }
 
 func (u *upstream) chooseHost(key []byte) (string, error) {
@@ -149,7 +136,7 @@ func (u *upstream) chooseHost(key []byte) (string, error) {
 	return host.Addr, nil
 }
 
-func (u *upstream) makeRequestToHost(addr string, req *simpleRequest) {
+func (u *upstream) MakeRequestToHost(addr string, req *simpleRequest) {
 	// request metrics
 	u.stats.RqTotal.Inc()
 	req.RegisterHook(func(req *simpleRequest) {
@@ -230,7 +217,7 @@ func (u *upstream) createClient(addr string) (*client, error) {
 }
 
 func (u *upstream) addClientLocked(addr string, c *client) {
-	clone := u.loadClientsCopy()
+	clone := u.cloneClients()
 	clone[addr] = c
 	u.updateClients(clone)
 }
@@ -242,7 +229,7 @@ func (u *upstream) removeClient(addr string) {
 }
 
 func (u *upstream) removeClientLocked(addr string) {
-	clone := u.loadClientsCopy()
+	clone := u.cloneClients()
 	delete(clone, addr)
 	u.updateClients(clone)
 }
@@ -261,19 +248,36 @@ func (u *upstream) resetAllClients() {
 	}
 }
 
+func (u *upstream) loadClients() map[string]*client {
+	return u.clients.Load().(map[string]*client)
+}
+
+func (u *upstream) cloneClients() map[string]*client {
+	clients := u.loadClients()
+	cpy := make(map[string]*client, len(clients))
+	for k, v := range clients {
+		cpy[k] = v
+	}
+	return cpy
+}
+
+func (u *upstream) updateClients(clients map[string]*client) {
+	u.clients.Store(clients)
+}
+
 func (u *upstream) handleRedirection(req *simpleRequest, resp *RespValue) {
 	err := strings.Split(string(resp.Text), " ")
 	hostAddr := err[2]
 	switch strings.ToLower(err[0]) {
 	case MOVED:
 		u.stats.Counter("moved").Inc()
-		u.makeRequestToHost(hostAddr, req)
+		u.MakeRequestToHost(hostAddr, req)
 	case ASK:
-		askingReq := newSimpleRequest(newArray([]RespValue{
+		askingReq := newSimpleRequest(newArray(
 			*newBulkString(ASKING),
-		}))
-		u.makeRequestToHost(hostAddr, askingReq)
-		u.makeRequestToHost(hostAddr, req)
+		))
+		u.MakeRequestToHost(hostAddr, askingReq)
+		u.MakeRequestToHost(hostAddr, req)
 	}
 	u.triggerSlotsRefresh()
 }
@@ -352,17 +356,17 @@ func (u *upstream) randomHost() (*host.Host, error) {
 }
 
 func (u *upstream) doSlotsRefresh() error {
-	v := newArray([]RespValue{
+	v := newArray(
 		*newBulkString("cluster"),
 		*newBulkString("nodes"),
-	})
+	)
 	req := newSimpleRequest(v)
 
 	h, err := u.randomHost()
 	if err != nil {
 		return err
 	}
-	u.makeRequestToHost(h.Addr, req)
+	u.MakeRequestToHost(h.Addr, req)
 
 	// wait done
 	req.Wait()

@@ -57,10 +57,10 @@ func TestNewInteger(t *testing.T) {
 }
 
 func TestNewArray(t *testing.T) {
-	v := newArray([]RespValue{
+	v := newArray(
 		*newBulkString("get"),
 		*newBulkString("a"),
-	})
+	)
 	assert.Equal(t, Array, v.Type)
 	assert.Equal(t, 2, len(v.Array))
 	assert.Equal(t, "get a", v.String())

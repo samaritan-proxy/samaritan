@@ -183,10 +183,10 @@ func TestUpstreamClientHandleRedirection(t *testing.T) {
 			sconn.Read(make([]byte, 8192))
 			sconn.Write([]byte("-moved 3999 127.0.0.1:6380\r\n"))
 		}()
-		req := newSimpleRequest(newArray([]RespValue{
+		req := newSimpleRequest(newArray(
 			*newBulkString("get"),
 			*newBulkString("a"),
-		}))
+		))
 		c.Send(req)
 		req.Wait()
 		assert.Equal(t, BulkString, req.Response().Type)
@@ -197,10 +197,10 @@ func TestUpstreamClientHandleRedirection(t *testing.T) {
 			sconn.Read(make([]byte, 8192))
 			sconn.Write([]byte("-ask 3999 127.0.0.1:6380\r\n"))
 		}()
-		req := newSimpleRequest(newArray([]RespValue{
+		req := newSimpleRequest(newArray(
 			*newBulkString("get"),
 			*newBulkString("a"),
-		}))
+		))
 		c.Send(req)
 		req.Wait()
 		assert.Equal(t, BulkString, req.Response().Type)
@@ -227,10 +227,10 @@ func TestUpstreamClientHandleClusterDown(t *testing.T) {
 		sconn.Read(make([]byte, 8192))
 		sconn.Write([]byte("-CLUSTERDOWN the cluster is down\r\n"))
 	}()
-	req := newSimpleRequest(newArray([]RespValue{
+	req := newSimpleRequest(newArray(
 		*newBulkString("get"),
 		*newBulkString("a"),
-	}))
+	))
 	c.Send(req)
 	req.Wait()
 	assert.Equal(t, BulkString, req.Response().Type)
@@ -247,10 +247,10 @@ func TestUpstreamClientHandleResp(t *testing.T) {
 	assert.Equal(t, SimpleString, req.Response().Type)
 
 	// error response
-	req = newSimpleRequest(newArray([]RespValue{
+	req = newSimpleRequest(newArray(
 		*newBulkString("get"),
 		*newBulkString("a"),
-	}))
+	))
 	c.handleResp(req, newError("internal error"))
 	req.Wait()
 	assert.Equal(t, Error, req.Response().Type)
@@ -474,10 +474,10 @@ func TestUpstreamRefreshSlots(t *testing.T) {
 		b := make([]byte, 1024)
 		n, _ := conn.Read(b)
 		// assert request
-		expect := encode(newArray([]RespValue{
+		expect := encode(newArray(
 			*newBulkString("cluster"),
 			*newBulkString("nodes"),
-		}))
+		))
 		if !strings.EqualFold(string(expect), string(b[:n])) {
 			conn.Close()
 			return
@@ -590,10 +590,10 @@ func TestUpstreamHandleRedirection(t *testing.T) {
 	}()
 
 	t.Run("moved", func(t *testing.T) {
-		req := newSimpleRequest(newArray([]RespValue{
+		req := newSimpleRequest(newArray(
 			*newBulkString("get"),
 			*newBulkString("a"),
-		}))
+		))
 
 		addr, shutdown := newTestListener(t, func(lnAddr string, conn net.Conn) {
 			// assert request
@@ -612,10 +612,10 @@ func TestUpstreamHandleRedirection(t *testing.T) {
 	})
 
 	t.Run("ask", func(t *testing.T) {
-		req := newSimpleRequest(newArray([]RespValue{
+		req := newSimpleRequest(newArray(
 			*newBulkString("get"),
 			*newBulkString("a"),
-		}))
+		))
 
 		addr, shutdown := newTestListener(t, func(lnAddr string, conn net.Conn) {
 			// assert request
@@ -661,10 +661,10 @@ func TestUpstreamHandleClusterDown(t *testing.T) {
 	assertSlots := newSlotsRefreshTriggerAssert(t, u)
 	defer assertSlots()
 
-	req := newSimpleRequest(newArray([]RespValue{
+	req := newSimpleRequest(newArray(
 		*newBulkString("get"),
 		*newBulkString("a"),
-	}))
+	))
 	defer req.Wait()
 	resp := newError("CLUSTERDOWN the cluster is down")
 	u.handleClusterDown(req, resp)
