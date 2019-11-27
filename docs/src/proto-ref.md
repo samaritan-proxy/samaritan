@@ -85,11 +85,11 @@
   
 
 - [api/discovery.proto](#api/discovery.proto)
+    - [DependencyRequest](#api.DependencyRequest)
+    - [DependencyResponse](#api.DependencyResponse)
     - [SvcConfigDiscoveryRequest](#api.SvcConfigDiscoveryRequest)
     - [SvcConfigDiscoveryResponse](#api.SvcConfigDiscoveryResponse)
     - [SvcConfigDiscoveryResponse.UpdatedEntry](#api.SvcConfigDiscoveryResponse.UpdatedEntry)
-    - [SvcDiscoveryRequest](#api.SvcDiscoveryRequest)
-    - [SvcDiscoveryResponse](#api.SvcDiscoveryResponse)
     - [SvcEndpointDiscoveryRequest](#api.SvcEndpointDiscoveryRequest)
     - [SvcEndpointDiscoveryResponse](#api.SvcEndpointDiscoveryResponse)
   
@@ -738,6 +738,37 @@ Load balance policy.
 
 
 
+<a name="api.DependencyRequest"></a>
+
+### DependencyRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| instance | [common.Instance](#common.Instance) |  | Meta information of the current instance. |
+
+
+
+
+
+
+<a name="api.DependencyResponse"></a>
+
+### DependencyResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| added | [service.Service](#service.Service) | repeated | Added service. |
+| removed | [service.Service](#service.Service) | repeated | Removed service. |
+
+
+
+
+
+
 <a name="api.SvcConfigDiscoveryRequest"></a>
 
 ### SvcConfigDiscoveryRequest
@@ -779,37 +810,6 @@ Load balance policy.
 | ----- | ---- | ----- | ----------- |
 | key | [string](#string) |  |  |
 | value | [service.Config](#service.Config) |  |  |
-
-
-
-
-
-
-<a name="api.SvcDiscoveryRequest"></a>
-
-### SvcDiscoveryRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| instance | [common.Instance](#common.Instance) |  | Meta information of the current instance. |
-
-
-
-
-
-
-<a name="api.SvcDiscoveryResponse"></a>
-
-### SvcDiscoveryResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| added | [service.Service](#service.Service) | repeated | Added service. |
-| removed | [service.Service](#service.Service) | repeated | Removed service. |
 
 
 
@@ -858,12 +858,12 @@ Load balance policy.
 <a name="api.DiscoveryService"></a>
 
 ### DiscoveryService
-DiscoveryService is a service which is used to discover service, service config
-and service endpoints.
+DiscoveryService is a service which is used to discover service, service
+config and service endpoints.
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
-| StreamSvcs | [SvcDiscoveryRequest](#api.SvcDiscoveryRequest) | [SvcDiscoveryResponse](#api.SvcDiscoveryResponse) stream |  |
+| StreamDependency | [DependencyRequest](#api.DependencyRequest) | [DependencyResponse](#api.DependencyResponse) stream |  |
 | StreamSvcConfigs | [SvcConfigDiscoveryRequest](#api.SvcConfigDiscoveryRequest) stream | [SvcConfigDiscoveryResponse](#api.SvcConfigDiscoveryResponse) stream |  |
 | StreamSvcEndpoints | [SvcEndpointDiscoveryRequest](#api.SvcEndpointDiscoveryRequest) stream | [SvcEndpointDiscoveryResponse](#api.SvcEndpointDiscoveryResponse) stream |  |
 
