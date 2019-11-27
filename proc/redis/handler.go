@@ -203,6 +203,33 @@ func handleInfo(u *upstream, req *rawRequest) {
 	})
 }
 
+var (
+	invalidCursor = "invalid cursor"
+
+	respScanTerm = newArray(
+		*newBulkString("0"),
+		*newArray([]RespValue{}...),
+	)
+)
+
 func handleScan(u *upstream, req *rawRequest) {
-	// TODO: implement it
+	scanReq, err := newScanRequest(req)
+	if err != nil {
+		req.SetResponse(newError(err.Error()))
+		return
+	}
+
+	// convert to simple request.
+	nodeIdx, simpleReq := scanReq.Convert()
+	hosts := u.Hosts()
+
+	// check if already scanned all the nodes.
+	if nodeIdx >= uint16(len(hosts)) {
+		req.SetResponse(respScanTerm)
+		return
+	}
+
+	// send request to the specified node.
+	host := hosts[nodeIdx]
+	u.MakeRequestToHost(host.Addr, simpleReq)
 }

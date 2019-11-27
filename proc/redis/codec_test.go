@@ -76,9 +76,9 @@ func TestEncodeBulkString(t *testing.T) {
 }
 
 func TestEncodeArray(t *testing.T) {
-	v := newArray(nil)
+	v := newArray()
 	testEncodeAndCheck(t, v, []byte("*-1\r\n"))
-	v.Array = []RespValue{}
+	v = newArray([]RespValue{}...)
 	testEncodeAndCheck(t, v, []byte("*0\r\n"))
 	v.Array = append(v.Array, *newInteger(0))
 	testEncodeAndCheck(t, v, []byte("*1\r\n:0\r\n"))
@@ -250,9 +250,9 @@ func (b *loopReader) Read(p []byte) (int, error) {
 }
 
 func newBenchmarkDecoder(t *testing.B, n int) *decoder {
-	v := newArray([]RespValue{
+	v := newArray(
 		*newBulkString(string(make([]byte, n))),
-	})
+	)
 	var buf bytes.Buffer
 	enc := newEncoder(&buf, 8192)
 	err := enc.Encode(v)
