@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/keepalive"
 
 	"github.com/samaritan-proxy/samaritan/logger"
 	"github.com/samaritan-proxy/samaritan/pb/api"
@@ -84,7 +85,14 @@ type dynamicSource struct {
 var newDiscoveryServiceClient = func(cfg *bootstrap.ConfigSource) (c api.DiscoveryServiceClient, shutdown func() error, err error) {
 	target := cfg.Endpoint
 	// TODO: support Authentication
-	cc, err := grpc.Dial(target, grpc.WithInsecure())
+	options := []grpc.DialOption{
+		grpc.WithInsecure(),
+		grpc.WithKeepaliveParams(keepalive.ClientParameters{
+			Time:    time.Second * 30,
+			Timeout: time.Second * 10,
+		}),
+	}
+	cc, err := grpc.Dial(target, options...)
 	if err != nil {
 		return nil, nil, err
 	}
