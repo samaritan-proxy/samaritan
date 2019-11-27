@@ -17,7 +17,6 @@ package config
 import (
 	"context"
 	"errors"
-	"fmt"
 	"io"
 	"testing"
 	"time"
@@ -66,7 +65,7 @@ func (r *rpcMsg) Matches(msg interface{}) bool {
 }
 
 func (r *rpcMsg) String() string {
-	return fmt.Sprintf("%s", r.msg)
+	return r.msg.String()
 }
 
 func newTestInstance() *common.Instance {
