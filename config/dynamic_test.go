@@ -76,8 +76,8 @@ func newTestInstance() *common.Instance {
 	}
 }
 
-func makeSvcDiscoveryResponse(added, removed []*service.Service) *api.SvcDiscoveryResponse {
-	return &api.SvcDiscoveryResponse{
+func makeDependencyDiscoveryResponse(added, removed []*service.Service) *api.DependencyDiscoveryResponse {
+	return &api.DependencyDiscoveryResponse{
 		Added:   added,
 		Removed: removed,
 	}
@@ -100,14 +100,14 @@ func TestDynamicSourceStreamSvcs(t *testing.T) {
 	removedSvcs := []*service.Service{makeService("bar")}
 
 	// mock stream
-	stream := NewMockDiscoveryService_StreamSvcsClient(ctrl)
+	stream := NewMockDiscoveryService_StreamDependenciesClient(ctrl)
 	streamQuitCh := make(chan struct{})
 	abortStream := func() { close(streamQuitCh) }
 	recvTimes := 0
-	stream.EXPECT().Recv().DoAndReturn(func() (*api.SvcDiscoveryResponse, error) {
+	stream.EXPECT().Recv().DoAndReturn(func() (*api.DependencyDiscoveryResponse, error) {
 		recvTimes++
 		if recvTimes < 2 {
-			return makeSvcDiscoveryResponse(addedSvcs, removedSvcs), nil
+			return makeDependencyDiscoveryResponse(addedSvcs, removedSvcs), nil
 		}
 		// wait the stream closed
 		<-streamQuitCh
@@ -116,8 +116,8 @@ func TestDynamicSourceStreamSvcs(t *testing.T) {
 
 	// mock client
 	c := NewMockDiscoveryServiceClient(ctrl)
-	req := &api.SvcDiscoveryRequest{Instance: b.Instance}
-	c.EXPECT().StreamSvcs(gomock.Any(), &rpcMsg{msg: req}).Return(stream, nil)
+	req := &api.DependencyDiscoveryRequest{Instance: b.Instance}
+	c.EXPECT().StreamDependencies(gomock.Any(), &rpcMsg{msg: req}).Return(stream, nil)
 
 	// mock client facotory
 	factory := newDiscoveryServiceClientFacotry(c, nil)
@@ -308,7 +308,7 @@ func TestStopDynamicSource(t *testing.T) {
 	// mock
 	c := NewMockDiscoveryServiceClient(ctrl)
 	err := errors.New("internal error")
-	c.EXPECT().StreamSvcs(gomock.Any(), gomock.Any()).Return(nil, err).AnyTimes()
+	c.EXPECT().StreamDependencies(gomock.Any(), gomock.Any()).Return(nil, err).AnyTimes()
 	c.EXPECT().StreamSvcConfigs(gomock.Any()).Return(nil, err).AnyTimes()
 	c.EXPECT().StreamSvcEndpoints(gomock.Any()).Return(nil, err).AnyTimes()
 

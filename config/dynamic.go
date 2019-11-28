@@ -17,7 +17,7 @@ package config
 // FIXME: mockgen can't handle cycle imports in reflect mode when outside of GOPATH currently,
 // so add self_package parameter temporarily. Refer to: https://github.com/golang/mock/issues/310
 //go:generate mockgen -package $GOPACKAGE -self_package $REPO_URI/$GOPACKAGE --destination ./mock_dynamic_test.go $REPO_URI/$GOPACKAGE  DynamicSource
-//go:generate mockgen -package $GOPACKAGE --destination ./mock_discovery_test.go $REPO_URI/pb/api DiscoveryServiceClient,DiscoveryService_StreamSvcsClient,DiscoveryService_StreamSvcConfigsClient,DiscoveryService_StreamSvcEndpointsClient
+//go:generate mockgen -package $GOPACKAGE --destination ./mock_discovery_test.go $REPO_URI/pb/api DiscoveryServiceClient,DiscoveryService_StreamDependenciesClient,DiscoveryService_StreamSvcConfigsClient,DiscoveryService_StreamSvcEndpointsClient
 
 import (
 	"context"
@@ -186,10 +186,10 @@ func (d *dynamicSource) StreamSvcs() {
 }
 
 func (d *dynamicSource) streamSvcs(ctx context.Context) {
-	req := &api.SvcDiscoveryRequest{
+	req := &api.DependencyDiscoveryRequest{
 		Instance: d.b.Instance,
 	}
-	stream, err := d.c.StreamSvcs(ctx, req)
+	stream, err := d.c.StreamDependencies(ctx, req)
 	if err != nil {
 		logger.Warnf("Fail to create stream client: %v", err)
 		return
