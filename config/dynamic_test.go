@@ -87,7 +87,7 @@ func TestDynamicSourceStreamSvcs(t *testing.T) {
 
 	// mock discovery service client and stream
 	req := &api.DependencyDiscoveryRequest{Instance: b.Instance}
-	stream := NewMockDiscoveryService_StreamDependencyClient(ctrl)
+	stream := NewMockDiscoveryService_StreamDependenciesClient(ctrl)
 	addedSvcs := []*service.Service{
 		{Name: "foo"},
 	}
@@ -103,7 +103,7 @@ func TestDynamicSourceStreamSvcs(t *testing.T) {
 		return nil, io.EOF
 	})
 	c := NewMockDiscoveryServiceClient(ctrl)
-	c.EXPECT().StreamDependency(gomock.Any(), &rpcMsg{msg: req}).Return(stream, nil)
+	c.EXPECT().StreamDependencies(gomock.Any(), &rpcMsg{msg: req}).Return(stream, nil)
 
 	// mock discovery service client facotory
 	factory := newDiscoveryServiceClientFacotry(c, nil)
@@ -265,7 +265,7 @@ func TestStopDynamicSource(t *testing.T) {
 	// mock
 	c := NewMockDiscoveryServiceClient(ctrl)
 	err := errors.New("internal error")
-	c.EXPECT().StreamDependency(gomock.Any(), gomock.Any()).Return(nil, err).AnyTimes()
+	c.EXPECT().StreamDependencies(gomock.Any(), gomock.Any()).Return(nil, err).AnyTimes()
 	c.EXPECT().StreamSvcConfigs(gomock.Any()).Return(nil, err).AnyTimes()
 	c.EXPECT().StreamSvcEndpoints(gomock.Any()).Return(nil, err).AnyTimes()
 
