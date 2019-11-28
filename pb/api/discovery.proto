@@ -33,11 +33,11 @@ option (gogoproto.gostring_all) = true;
 option (gogoproto.marshaler_all) = true;
 option (gogoproto.unmarshaler_all) = true;
 
-// DiscoveryService is a service which is used to discover service, service config
-// and service endpoints.
+// DiscoveryService is a service which is used to discover service, service
+// config and service endpoints.
 service DiscoveryService {
-  rpc StreamSvcs(SvcDiscoveryRequest)
-      returns (stream SvcDiscoveryResponse) {}
+  rpc StreamDependencies(DependencyDiscoveryRequest)
+      returns (stream DependencyDiscoveryResponse) {}
 
   rpc StreamSvcConfigs(stream SvcConfigDiscoveryRequest)
       returns (stream SvcConfigDiscoveryResponse) {}
@@ -46,12 +46,12 @@ service DiscoveryService {
       returns (stream SvcEndpointDiscoveryResponse) {}
 }
 
-message SvcDiscoveryRequest {
+message DependencyDiscoveryRequest {
   // Meta information of the current instance.
   common.Instance instance = 1;
 }
 
-message SvcDiscoveryResponse {
+message DependencyDiscoveryResponse {
   // Added service.
   repeated service.Service added = 1;
   // Removed service.

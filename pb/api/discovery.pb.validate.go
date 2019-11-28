@@ -33,10 +33,10 @@ var (
 	_ = types.DynamicAny{}
 )
 
-// Validate checks the field values on SvcDiscoveryRequest with the rules
-// defined in the proto definition for this message. If any rules are
+// Validate checks the field values on DependencyDiscoveryRequest with the
+// rules defined in the proto definition for this message. If any rules are
 // violated, an error is returned.
-func (m *SvcDiscoveryRequest) Validate() error {
+func (m *DependencyDiscoveryRequest) Validate() error {
 	if m == nil {
 		return nil
 	}
@@ -47,7 +47,7 @@ func (m *SvcDiscoveryRequest) Validate() error {
 		if v, ok := interface{}(tmp).(interface{ Validate() error }); ok {
 
 			if err := v.Validate(); err != nil {
-				return SvcDiscoveryRequestValidationError{
+				return DependencyDiscoveryRequestValidationError{
 					field:  "Instance",
 					reason: "embedded message failed validation",
 					cause:  err,
@@ -59,9 +59,9 @@ func (m *SvcDiscoveryRequest) Validate() error {
 	return nil
 }
 
-// SvcDiscoveryRequestValidationError is the validation error returned by
-// SvcDiscoveryRequest.Validate if the designated constraints aren't met.
-type SvcDiscoveryRequestValidationError struct {
+// DependencyDiscoveryRequestValidationError is the validation error returned
+// by DependencyDiscoveryRequest.Validate if the designated constraints aren't met.
+type DependencyDiscoveryRequestValidationError struct {
 	field  string
 	reason string
 	cause  error
@@ -69,24 +69,24 @@ type SvcDiscoveryRequestValidationError struct {
 }
 
 // Field function returns field value.
-func (e SvcDiscoveryRequestValidationError) Field() string { return e.field }
+func (e DependencyDiscoveryRequestValidationError) Field() string { return e.field }
 
 // Reason function returns reason value.
-func (e SvcDiscoveryRequestValidationError) Reason() string { return e.reason }
+func (e DependencyDiscoveryRequestValidationError) Reason() string { return e.reason }
 
 // Cause function returns cause value.
-func (e SvcDiscoveryRequestValidationError) Cause() error { return e.cause }
+func (e DependencyDiscoveryRequestValidationError) Cause() error { return e.cause }
 
 // Key function returns key value.
-func (e SvcDiscoveryRequestValidationError) Key() bool { return e.key }
+func (e DependencyDiscoveryRequestValidationError) Key() bool { return e.key }
 
 // ErrorName returns error name.
-func (e SvcDiscoveryRequestValidationError) ErrorName() string {
-	return "SvcDiscoveryRequestValidationError"
+func (e DependencyDiscoveryRequestValidationError) ErrorName() string {
+	return "DependencyDiscoveryRequestValidationError"
 }
 
 // Error satisfies the builtin error interface
-func (e SvcDiscoveryRequestValidationError) Error() string {
+func (e DependencyDiscoveryRequestValidationError) Error() string {
 	cause := ""
 	if e.cause != nil {
 		cause = fmt.Sprintf(" | caused by: %v", e.cause)
@@ -98,14 +98,14 @@ func (e SvcDiscoveryRequestValidationError) Error() string {
 	}
 
 	return fmt.Sprintf(
-		"invalid %sSvcDiscoveryRequest.%s: %s%s",
+		"invalid %sDependencyDiscoveryRequest.%s: %s%s",
 		key,
 		e.field,
 		e.reason,
 		cause)
 }
 
-var _ error = SvcDiscoveryRequestValidationError{}
+var _ error = DependencyDiscoveryRequestValidationError{}
 
 var _ interface {
 	Field() string
@@ -113,12 +113,12 @@ var _ interface {
 	Key() bool
 	Cause() error
 	ErrorName() string
-} = SvcDiscoveryRequestValidationError{}
+} = DependencyDiscoveryRequestValidationError{}
 
-// Validate checks the field values on SvcDiscoveryResponse with the rules
-// defined in the proto definition for this message. If any rules are
+// Validate checks the field values on DependencyDiscoveryResponse with the
+// rules defined in the proto definition for this message. If any rules are
 // violated, an error is returned.
-func (m *SvcDiscoveryResponse) Validate() error {
+func (m *DependencyDiscoveryResponse) Validate() error {
 	if m == nil {
 		return nil
 	}
@@ -132,7 +132,7 @@ func (m *SvcDiscoveryResponse) Validate() error {
 			if v, ok := interface{}(tmp).(interface{ Validate() error }); ok {
 
 				if err := v.Validate(); err != nil {
-					return SvcDiscoveryResponseValidationError{
+					return DependencyDiscoveryResponseValidationError{
 						field:  fmt.Sprintf("Added[%v]", idx),
 						reason: "embedded message failed validation",
 						cause:  err,
@@ -152,7 +152,7 @@ func (m *SvcDiscoveryResponse) Validate() error {
 			if v, ok := interface{}(tmp).(interface{ Validate() error }); ok {
 
 				if err := v.Validate(); err != nil {
-					return SvcDiscoveryResponseValidationError{
+					return DependencyDiscoveryResponseValidationError{
 						field:  fmt.Sprintf("Removed[%v]", idx),
 						reason: "embedded message failed validation",
 						cause:  err,
@@ -166,9 +166,10 @@ func (m *SvcDiscoveryResponse) Validate() error {
 	return nil
 }
 
-// SvcDiscoveryResponseValidationError is the validation error returned by
-// SvcDiscoveryResponse.Validate if the designated constraints aren't met.
-type SvcDiscoveryResponseValidationError struct {
+// DependencyDiscoveryResponseValidationError is the validation error returned
+// by DependencyDiscoveryResponse.Validate if the designated constraints
+// aren't met.
+type DependencyDiscoveryResponseValidationError struct {
 	field  string
 	reason string
 	cause  error
@@ -176,24 +177,24 @@ type SvcDiscoveryResponseValidationError struct {
 }
 
 // Field function returns field value.
-func (e SvcDiscoveryResponseValidationError) Field() string { return e.field }
+func (e DependencyDiscoveryResponseValidationError) Field() string { return e.field }
 
 // Reason function returns reason value.
-func (e SvcDiscoveryResponseValidationError) Reason() string { return e.reason }
+func (e DependencyDiscoveryResponseValidationError) Reason() string { return e.reason }
 
 // Cause function returns cause value.
-func (e SvcDiscoveryResponseValidationError) Cause() error { return e.cause }
+func (e DependencyDiscoveryResponseValidationError) Cause() error { return e.cause }
 
 // Key function returns key value.
-func (e SvcDiscoveryResponseValidationError) Key() bool { return e.key }
+func (e DependencyDiscoveryResponseValidationError) Key() bool { return e.key }
 
 // ErrorName returns error name.
-func (e SvcDiscoveryResponseValidationError) ErrorName() string {
-	return "SvcDiscoveryResponseValidationError"
+func (e DependencyDiscoveryResponseValidationError) ErrorName() string {
+	return "DependencyDiscoveryResponseValidationError"
 }
 
 // Error satisfies the builtin error interface
-func (e SvcDiscoveryResponseValidationError) Error() string {
+func (e DependencyDiscoveryResponseValidationError) Error() string {
 	cause := ""
 	if e.cause != nil {
 		cause = fmt.Sprintf(" | caused by: %v", e.cause)
@@ -205,14 +206,14 @@ func (e SvcDiscoveryResponseValidationError) Error() string {
 	}
 
 	return fmt.Sprintf(
-		"invalid %sSvcDiscoveryResponse.%s: %s%s",
+		"invalid %sDependencyDiscoveryResponse.%s: %s%s",
 		key,
 		e.field,
 		e.reason,
 		cause)
 }
 
-var _ error = SvcDiscoveryResponseValidationError{}
+var _ error = DependencyDiscoveryResponseValidationError{}
 
 var _ interface {
 	Field() string
@@ -220,7 +221,7 @@ var _ interface {
 	Key() bool
 	Cause() error
 	ErrorName() string
-} = SvcDiscoveryResponseValidationError{}
+} = DependencyDiscoveryResponseValidationError{}
 
 // Validate checks the field values on SvcConfigDiscoveryRequest with the rules
 // defined in the proto definition for this message. If any rules are

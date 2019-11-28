@@ -34,7 +34,7 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
-type SvcDiscoveryRequest struct {
+type DependencyDiscoveryRequest struct {
 	// Meta information of the current instance.
 	Instance             *common.Instance `protobuf:"bytes,1,opt,name=instance,proto3" json:"instance,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
@@ -42,18 +42,18 @@ type SvcDiscoveryRequest struct {
 	XXX_sizecache        int32            `json:"-"`
 }
 
-func (m *SvcDiscoveryRequest) Reset()         { *m = SvcDiscoveryRequest{} }
-func (m *SvcDiscoveryRequest) String() string { return proto.CompactTextString(m) }
-func (*SvcDiscoveryRequest) ProtoMessage()    {}
-func (*SvcDiscoveryRequest) Descriptor() ([]byte, []int) {
+func (m *DependencyDiscoveryRequest) Reset()         { *m = DependencyDiscoveryRequest{} }
+func (m *DependencyDiscoveryRequest) String() string { return proto.CompactTextString(m) }
+func (*DependencyDiscoveryRequest) ProtoMessage()    {}
+func (*DependencyDiscoveryRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_5ea7b57a526124c9, []int{0}
 }
-func (m *SvcDiscoveryRequest) XXX_Unmarshal(b []byte) error {
+func (m *DependencyDiscoveryRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *SvcDiscoveryRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *DependencyDiscoveryRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_SvcDiscoveryRequest.Marshal(b, m, deterministic)
+		return xxx_messageInfo_DependencyDiscoveryRequest.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -63,26 +63,26 @@ func (m *SvcDiscoveryRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte,
 		return b[:n], nil
 	}
 }
-func (m *SvcDiscoveryRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_SvcDiscoveryRequest.Merge(m, src)
+func (m *DependencyDiscoveryRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DependencyDiscoveryRequest.Merge(m, src)
 }
-func (m *SvcDiscoveryRequest) XXX_Size() int {
+func (m *DependencyDiscoveryRequest) XXX_Size() int {
 	return m.Size()
 }
-func (m *SvcDiscoveryRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_SvcDiscoveryRequest.DiscardUnknown(m)
+func (m *DependencyDiscoveryRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_DependencyDiscoveryRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_SvcDiscoveryRequest proto.InternalMessageInfo
+var xxx_messageInfo_DependencyDiscoveryRequest proto.InternalMessageInfo
 
-func (m *SvcDiscoveryRequest) GetInstance() *common.Instance {
+func (m *DependencyDiscoveryRequest) GetInstance() *common.Instance {
 	if m != nil {
 		return m.Instance
 	}
 	return nil
 }
 
-type SvcDiscoveryResponse struct {
+type DependencyDiscoveryResponse struct {
 	// Added service.
 	Added []*service.Service `protobuf:"bytes,1,rep,name=added,proto3" json:"added,omitempty"`
 	// Removed service.
@@ -92,18 +92,18 @@ type SvcDiscoveryResponse struct {
 	XXX_sizecache        int32              `json:"-"`
 }
 
-func (m *SvcDiscoveryResponse) Reset()         { *m = SvcDiscoveryResponse{} }
-func (m *SvcDiscoveryResponse) String() string { return proto.CompactTextString(m) }
-func (*SvcDiscoveryResponse) ProtoMessage()    {}
-func (*SvcDiscoveryResponse) Descriptor() ([]byte, []int) {
+func (m *DependencyDiscoveryResponse) Reset()         { *m = DependencyDiscoveryResponse{} }
+func (m *DependencyDiscoveryResponse) String() string { return proto.CompactTextString(m) }
+func (*DependencyDiscoveryResponse) ProtoMessage()    {}
+func (*DependencyDiscoveryResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_5ea7b57a526124c9, []int{1}
 }
-func (m *SvcDiscoveryResponse) XXX_Unmarshal(b []byte) error {
+func (m *DependencyDiscoveryResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *SvcDiscoveryResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *DependencyDiscoveryResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_SvcDiscoveryResponse.Marshal(b, m, deterministic)
+		return xxx_messageInfo_DependencyDiscoveryResponse.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -113,26 +113,26 @@ func (m *SvcDiscoveryResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte
 		return b[:n], nil
 	}
 }
-func (m *SvcDiscoveryResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_SvcDiscoveryResponse.Merge(m, src)
+func (m *DependencyDiscoveryResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DependencyDiscoveryResponse.Merge(m, src)
 }
-func (m *SvcDiscoveryResponse) XXX_Size() int {
+func (m *DependencyDiscoveryResponse) XXX_Size() int {
 	return m.Size()
 }
-func (m *SvcDiscoveryResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_SvcDiscoveryResponse.DiscardUnknown(m)
+func (m *DependencyDiscoveryResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_DependencyDiscoveryResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_SvcDiscoveryResponse proto.InternalMessageInfo
+var xxx_messageInfo_DependencyDiscoveryResponse proto.InternalMessageInfo
 
-func (m *SvcDiscoveryResponse) GetAdded() []*service.Service {
+func (m *DependencyDiscoveryResponse) GetAdded() []*service.Service {
 	if m != nil {
 		return m.Added
 	}
 	return nil
 }
 
-func (m *SvcDiscoveryResponse) GetRemoved() []*service.Service {
+func (m *DependencyDiscoveryResponse) GetRemoved() []*service.Service {
 	if m != nil {
 		return m.Removed
 	}
@@ -368,8 +368,8 @@ func (m *SvcEndpointDiscoveryResponse) GetRemoved() []*service.Endpoint {
 }
 
 func init() {
-	proto.RegisterType((*SvcDiscoveryRequest)(nil), "api.SvcDiscoveryRequest")
-	proto.RegisterType((*SvcDiscoveryResponse)(nil), "api.SvcDiscoveryResponse")
+	proto.RegisterType((*DependencyDiscoveryRequest)(nil), "api.DependencyDiscoveryRequest")
+	proto.RegisterType((*DependencyDiscoveryResponse)(nil), "api.DependencyDiscoveryResponse")
 	proto.RegisterType((*SvcConfigDiscoveryRequest)(nil), "api.SvcConfigDiscoveryRequest")
 	proto.RegisterType((*SvcConfigDiscoveryResponse)(nil), "api.SvcConfigDiscoveryResponse")
 	proto.RegisterMapType((map[string]*service.Config)(nil), "api.SvcConfigDiscoveryResponse.UpdatedEntry")
@@ -380,46 +380,46 @@ func init() {
 func init() { proto.RegisterFile("api/discovery.proto", fileDescriptor_5ea7b57a526124c9) }
 
 var fileDescriptor_5ea7b57a526124c9 = []byte{
-	// 562 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xc4, 0x54, 0xcd, 0x6e, 0xd3, 0x4c,
-	0x14, 0xed, 0x24, 0xea, 0xd7, 0xf6, 0x7e, 0x48, 0xa4, 0x93, 0x56, 0x24, 0x6e, 0x65, 0x82, 0x25,
-	0xa0, 0xa2, 0xc5, 0xae, 0xc2, 0x06, 0xb1, 0xa4, 0x04, 0x09, 0x21, 0x58, 0xd8, 0xea, 0x02, 0x36,
-	0xd1, 0x64, 0x3c, 0x84, 0x81, 0xda, 0x63, 0x3c, 0xf6, 0x88, 0xac, 0x10, 0x4f, 0xc0, 0x8a, 0x77,
-	0x60, 0xcb, 0x5b, 0xb0, 0xe4, 0x11, 0x5a, 0xaf, 0x58, 0xf6, 0x11, 0x90, 0x3d, 0x1e, 0xa7, 0x94,
-	0x04, 0x96, 0xac, 0x3c, 0xe3, 0x73, 0xee, 0xb9, 0x7f, 0x47, 0x03, 0x5d, 0x92, 0x70, 0x2f, 0xe4,
-	0x92, 0x0a, 0xc5, 0xd2, 0x99, 0x9b, 0xa4, 0x22, 0x13, 0xb8, 0x4d, 0x12, 0x6e, 0x6d, 0x4d, 0xc5,
-	0x54, 0x54, 0x77, 0xaf, 0x3c, 0x69, 0xc8, 0xba, 0xa6, 0xc8, 0x09, 0x0f, 0x49, 0xc6, 0x3c, 0x73,
-	0xa8, 0x81, 0x6d, 0x2a, 0xa2, 0x48, 0xc4, 0x1e, 0x8f, 0x65, 0x46, 0x62, 0x6a, 0x7e, 0xef, 0x52,
-	0x11, 0xbf, 0xe2, 0x53, 0x4f, 0xb2, 0x54, 0x71, 0xca, 0xcc, 0xb7, 0x46, 0x77, 0x2e, 0xa1, 0xfa,
-	0xaa, 0x41, 0xe7, 0x08, 0xba, 0x81, 0xa2, 0x8f, 0x4c, 0x6d, 0x3e, 0x7b, 0x97, 0x33, 0x99, 0xe1,
-	0x03, 0x58, 0x37, 0x39, 0x7a, 0x68, 0x80, 0xf6, 0xfe, 0x1f, 0x76, 0x5c, 0x9d, 0xdb, 0x7d, 0x52,
-	0xff, 0xf7, 0x1b, 0x86, 0xf3, 0x06, 0xb6, 0x7e, 0x15, 0x91, 0x89, 0x88, 0x25, 0xc3, 0xb7, 0x60,
-	0x95, 0x84, 0x21, 0x0b, 0x7b, 0x68, 0xd0, 0xae, 0x24, 0x4c, 0x61, 0x81, 0xfe, 0xfa, 0x1a, 0xc6,
-	0x77, 0x60, 0x2d, 0x65, 0x91, 0x50, 0x2c, 0xec, 0xb5, 0x96, 0x30, 0x0d, 0xc1, 0xf9, 0x00, 0xfd,
-	0x40, 0xd1, 0xa3, 0xaa, 0x87, 0xdf, 0xca, 0x76, 0xa1, 0x2b, 0x15, 0x1d, 0xc7, 0x24, 0x62, 0x72,
-	0x2c, 0xf3, 0x89, 0xa4, 0x29, 0x9f, 0xb0, 0x2a, 0xfd, 0x86, 0xbf, 0x29, 0x15, 0x7d, 0x5e, 0x22,
-	0x81, 0x01, 0xf0, 0x10, 0xb6, 0xe7, 0xfc, 0x3c, 0x9e, 0x47, 0xb4, 0xaa, 0x88, 0xae, 0x89, 0x38,
-	0x9e, 0x43, 0xce, 0x57, 0x04, 0xd6, 0xa2, 0x0a, 0xea, 0x9e, 0x1f, 0xc3, 0x5a, 0x9e, 0x94, 0x2b,
-	0x33, 0x5d, 0x1f, 0xb8, 0x24, 0xe1, 0xee, 0xf2, 0x08, 0xf7, 0x58, 0xd3, 0x47, 0x71, 0x96, 0xce,
-	0x7c, 0x13, 0x6c, 0x3d, 0x85, 0x2b, 0x17, 0x01, 0xdc, 0x81, 0xf6, 0x5b, 0x36, 0xab, 0x96, 0xb1,
-	0xe1, 0x97, 0x47, 0x7c, 0x13, 0x56, 0x15, 0x39, 0xc9, 0xcb, 0x62, 0xcb, 0x05, 0x5d, 0x6d, 0x66,
-	0xa6, 0x13, 0xf9, 0x1a, 0x7d, 0xd0, 0xba, 0x8f, 0x9c, 0x8f, 0x08, 0x76, 0x02, 0x45, 0x47, 0x71,
-	0x98, 0x08, 0x1e, 0x67, 0xff, 0x64, 0x6e, 0x9f, 0x10, 0xec, 0x2e, 0xae, 0xa1, 0x9e, 0x5c, 0x1f,
-	0xd6, 0x8d, 0x68, 0xdd, 0xe6, 0x5a, 0xad, 0x83, 0x6f, 0x1b, 0x23, 0x69, 0x7b, 0x6c, 0x36, 0xad,
-	0x1a, 0x35, 0xe3, 0xa4, 0xfd, 0xb9, 0x93, 0xda, 0xcb, 0xa8, 0x86, 0x31, 0xfc, 0xdc, 0x82, 0x4e,
-	0x53, 0x46, 0x6d, 0x34, 0x3c, 0x02, 0x08, 0xb2, 0x94, 0x91, 0x28, 0x50, 0x54, 0xe2, 0x9e, 0x59,
-	0xde, 0xe5, 0x91, 0x59, 0xfd, 0x05, 0x88, 0x6e, 0xc4, 0x59, 0x39, 0x44, 0xf8, 0x05, 0x74, 0x1a,
-	0x19, 0xbd, 0x0f, 0x89, 0xed, 0xa5, 0x4e, 0xd0, 0x92, 0xd7, 0xff, 0xe2, 0x14, 0x67, 0x65, 0x0f,
-	0x1d, 0x22, 0x3c, 0x06, 0xdc, 0x48, 0x9b, 0xa6, 0x24, 0x1e, 0x98, 0xe0, 0x65, 0x4b, 0xb6, 0x6e,
-	0xfc, 0x81, 0x71, 0x31, 0xc1, 0xc3, 0x67, 0xa7, 0x67, 0x36, 0x3a, 0x3f, 0xb3, 0xd1, 0x97, 0xc2,
-	0x46, 0xdf, 0x0a, 0x1b, 0x7d, 0x2f, 0x6c, 0x74, 0x5a, 0xd8, 0xe8, 0x47, 0x61, 0xa3, 0xf3, 0xc2,
-	0x5e, 0x79, 0xb9, 0x3f, 0xe5, 0xd9, 0xeb, 0x7c, 0x52, 0x3e, 0x09, 0x9e, 0x24, 0x11, 0x49, 0x79,
-	0x46, 0xe2, 0xbb, 0x49, 0x2a, 0xde, 0xcf, 0xe6, 0x77, 0x2f, 0x99, 0x78, 0x24, 0xe1, 0x93, 0xff,
-	0xaa, 0x97, 0xe6, 0xde, 0xcf, 0x00, 0x00, 0x00, 0xff, 0xff, 0x02, 0xc0, 0x00, 0x26, 0x06, 0x05,
-	0x00, 0x00,
+	// 569 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xc4, 0x54, 0xc1, 0x6e, 0xd3, 0x4c,
+	0x10, 0xce, 0x26, 0xea, 0x9f, 0x76, 0x7f, 0x24, 0xd2, 0x0d, 0x15, 0xa9, 0x53, 0xb9, 0xc1, 0x12,
+	0x50, 0xd1, 0x62, 0x57, 0xe1, 0x82, 0x38, 0x42, 0x8b, 0x04, 0x08, 0x0e, 0x8e, 0x7a, 0x00, 0x0e,
+	0xd1, 0x66, 0xbd, 0x84, 0x15, 0xf5, 0xee, 0xd6, 0x6b, 0x5b, 0xe4, 0x84, 0x78, 0x02, 0x5e, 0x03,
+	0x89, 0x13, 0x6f, 0xc1, 0x91, 0x47, 0x68, 0x7d, 0xe2, 0xd8, 0x47, 0x40, 0xf6, 0x7a, 0xed, 0x08,
+	0x62, 0x38, 0x72, 0xf2, 0xae, 0xbf, 0x6f, 0x66, 0xbe, 0x99, 0xf9, 0x6c, 0xd8, 0xc7, 0x92, 0x79,
+	0x01, 0x53, 0x44, 0xa4, 0x34, 0x5a, 0xb8, 0x32, 0x12, 0xb1, 0x40, 0x1d, 0x2c, 0x99, 0x75, 0x6d,
+	0x2e, 0xe6, 0xa2, 0xb8, 0x7b, 0xf9, 0x49, 0x43, 0xd6, 0xf5, 0x14, 0x9f, 0xb2, 0x00, 0xc7, 0xd4,
+	0x33, 0x87, 0x12, 0xd8, 0x22, 0x22, 0x0c, 0x05, 0xf7, 0x18, 0x57, 0x31, 0xe6, 0xc4, 0xbc, 0xde,
+	0x21, 0x82, 0xbf, 0x61, 0x73, 0x4f, 0xd1, 0x28, 0x65, 0x84, 0x9a, 0x67, 0x89, 0x0e, 0x7f, 0x41,
+	0xf5, 0x55, 0x83, 0xce, 0x53, 0x68, 0x1d, 0x51, 0x49, 0x79, 0x40, 0x39, 0x59, 0x1c, 0x19, 0x89,
+	0x3e, 0x3d, 0x4b, 0xa8, 0x8a, 0xd1, 0x01, 0x5c, 0x37, 0xa5, 0x06, 0x60, 0x04, 0xf6, 0xfe, 0x1f,
+	0xf7, 0x5c, 0x2d, 0xc1, 0x7d, 0x52, 0xbe, 0xf7, 0x2b, 0x86, 0x73, 0x06, 0x87, 0x2b, 0x73, 0x29,
+	0x29, 0xb8, 0xa2, 0xe8, 0x16, 0x5c, 0xc3, 0x41, 0x40, 0x83, 0x01, 0x18, 0x75, 0x8a, 0x4c, 0x46,
+	0xe6, 0x44, 0x3f, 0x7d, 0x0d, 0xa3, 0x3b, 0xb0, 0x1b, 0xd1, 0x50, 0xa4, 0x34, 0x18, 0xb4, 0x1b,
+	0x98, 0x86, 0xe0, 0x7c, 0x80, 0xdb, 0x93, 0x94, 0x3c, 0x2a, 0x3a, 0xfa, 0x4d, 0xbd, 0x0b, 0xfb,
+	0x2a, 0x25, 0x53, 0x8e, 0x43, 0xaa, 0xa6, 0x2a, 0x99, 0x29, 0x12, 0xb1, 0x19, 0x2d, 0xca, 0x6f,
+	0xf8, 0x9b, 0x2a, 0x25, 0x2f, 0x72, 0x64, 0x62, 0x00, 0x34, 0x86, 0x5b, 0x35, 0x3f, 0xe1, 0x75,
+	0x44, 0xbb, 0x88, 0xe8, 0x9b, 0x88, 0x93, 0x1a, 0x72, 0xbe, 0x02, 0x68, 0xad, 0x52, 0x50, 0xf6,
+	0xfc, 0x18, 0x76, 0x13, 0x99, 0x2f, 0xd0, 0x74, 0x7d, 0xe0, 0x62, 0xc9, 0xdc, 0xe6, 0x08, 0xf7,
+	0x44, 0xd3, 0x8f, 0x79, 0x1c, 0x2d, 0x7c, 0x13, 0x6c, 0x3d, 0x83, 0x57, 0x96, 0x01, 0xd4, 0x83,
+	0x9d, 0x77, 0x74, 0x51, 0xec, 0x64, 0xc3, 0xcf, 0x8f, 0xe8, 0x26, 0x5c, 0x4b, 0xf1, 0x69, 0x92,
+	0x8b, 0xcd, 0xf7, 0x74, 0xb5, 0x9a, 0x99, 0x2e, 0xe4, 0x6b, 0xf4, 0x41, 0xfb, 0x3e, 0x70, 0x3e,
+	0x02, 0x38, 0x9c, 0xa4, 0xe4, 0x98, 0x07, 0x52, 0x30, 0x1e, 0xff, 0x93, 0xb9, 0x7d, 0x02, 0x70,
+	0x67, 0xb5, 0x86, 0x72, 0x72, 0xdb, 0x70, 0xdd, 0x24, 0x2d, 0xdb, 0xec, 0x96, 0x79, 0xd0, 0x6d,
+	0x63, 0x24, 0x6d, 0x8f, 0xcd, 0xaa, 0x55, 0x93, 0xcd, 0x38, 0x69, 0xbf, 0x76, 0x52, 0xa7, 0x89,
+	0x6a, 0x18, 0xe3, 0x2f, 0x6d, 0xd8, 0xab, 0x64, 0x94, 0x46, 0x43, 0xaf, 0x21, 0x9a, 0xc4, 0x11,
+	0xc5, 0x61, 0x65, 0x6c, 0x46, 0x15, 0xda, 0x2d, 0x96, 0xd8, 0xfc, 0xdd, 0x58, 0xa3, 0x66, 0x82,
+	0x6e, 0xcf, 0x69, 0x1d, 0x02, 0xf4, 0x12, 0xf6, 0x74, 0xf2, 0xca, 0x0e, 0x0a, 0xd9, 0x8d, 0xfe,
+	0xd0, 0x99, 0x77, 0xff, 0xe2, 0x1f, 0xa7, 0xb5, 0x07, 0x0e, 0x01, 0x9a, 0x1a, 0xdd, 0x4b, 0x33,
+	0x56, 0x68, 0x64, 0x82, 0x9b, 0x56, 0x6f, 0xdd, 0xf8, 0x03, 0x63, 0xb9, 0xc0, 0xc3, 0xe7, 0xe7,
+	0x17, 0x36, 0xb8, 0xbc, 0xb0, 0xc1, 0xe7, 0xcc, 0x06, 0xdf, 0x32, 0x1b, 0x7c, 0xcf, 0x6c, 0x70,
+	0x9e, 0xd9, 0xe0, 0x47, 0x66, 0x83, 0xcb, 0xcc, 0x6e, 0xbd, 0xda, 0x9f, 0xb3, 0xf8, 0x6d, 0x32,
+	0xcb, 0xff, 0x17, 0x9e, 0xc2, 0x21, 0x8e, 0x58, 0x8c, 0xf9, 0x5d, 0x19, 0x89, 0xf7, 0x8b, 0xfa,
+	0xee, 0xc9, 0x99, 0x87, 0x25, 0x9b, 0xfd, 0x57, 0xfc, 0x8d, 0xee, 0xfd, 0x0c, 0x00, 0x00, 0xff,
+	0xff, 0x23, 0x4e, 0x35, 0x20, 0x2a, 0x05, 0x00, 0x00,
 }
 
-func (this *SvcDiscoveryRequest) VerboseEqual(that interface{}) error {
+func (this *DependencyDiscoveryRequest) VerboseEqual(that interface{}) error {
 	if that == nil {
 		if this == nil {
 			return nil
@@ -427,22 +427,22 @@ func (this *SvcDiscoveryRequest) VerboseEqual(that interface{}) error {
 		return fmt.Errorf("that == nil && this != nil")
 	}
 
-	that1, ok := that.(*SvcDiscoveryRequest)
+	that1, ok := that.(*DependencyDiscoveryRequest)
 	if !ok {
-		that2, ok := that.(SvcDiscoveryRequest)
+		that2, ok := that.(DependencyDiscoveryRequest)
 		if ok {
 			that1 = &that2
 		} else {
-			return fmt.Errorf("that is not of type *SvcDiscoveryRequest")
+			return fmt.Errorf("that is not of type *DependencyDiscoveryRequest")
 		}
 	}
 	if that1 == nil {
 		if this == nil {
 			return nil
 		}
-		return fmt.Errorf("that is type *SvcDiscoveryRequest but is nil && this != nil")
+		return fmt.Errorf("that is type *DependencyDiscoveryRequest but is nil && this != nil")
 	} else if this == nil {
-		return fmt.Errorf("that is type *SvcDiscoveryRequest but is not nil && this == nil")
+		return fmt.Errorf("that is type *DependencyDiscoveryRequest but is not nil && this == nil")
 	}
 	if !this.Instance.Equal(that1.Instance) {
 		return fmt.Errorf("Instance this(%v) Not Equal that(%v)", this.Instance, that1.Instance)
@@ -452,14 +452,14 @@ func (this *SvcDiscoveryRequest) VerboseEqual(that interface{}) error {
 	}
 	return nil
 }
-func (this *SvcDiscoveryRequest) Equal(that interface{}) bool {
+func (this *DependencyDiscoveryRequest) Equal(that interface{}) bool {
 	if that == nil {
 		return this == nil
 	}
 
-	that1, ok := that.(*SvcDiscoveryRequest)
+	that1, ok := that.(*DependencyDiscoveryRequest)
 	if !ok {
-		that2, ok := that.(SvcDiscoveryRequest)
+		that2, ok := that.(DependencyDiscoveryRequest)
 		if ok {
 			that1 = &that2
 		} else {
@@ -479,7 +479,7 @@ func (this *SvcDiscoveryRequest) Equal(that interface{}) bool {
 	}
 	return true
 }
-func (this *SvcDiscoveryResponse) VerboseEqual(that interface{}) error {
+func (this *DependencyDiscoveryResponse) VerboseEqual(that interface{}) error {
 	if that == nil {
 		if this == nil {
 			return nil
@@ -487,22 +487,22 @@ func (this *SvcDiscoveryResponse) VerboseEqual(that interface{}) error {
 		return fmt.Errorf("that == nil && this != nil")
 	}
 
-	that1, ok := that.(*SvcDiscoveryResponse)
+	that1, ok := that.(*DependencyDiscoveryResponse)
 	if !ok {
-		that2, ok := that.(SvcDiscoveryResponse)
+		that2, ok := that.(DependencyDiscoveryResponse)
 		if ok {
 			that1 = &that2
 		} else {
-			return fmt.Errorf("that is not of type *SvcDiscoveryResponse")
+			return fmt.Errorf("that is not of type *DependencyDiscoveryResponse")
 		}
 	}
 	if that1 == nil {
 		if this == nil {
 			return nil
 		}
-		return fmt.Errorf("that is type *SvcDiscoveryResponse but is nil && this != nil")
+		return fmt.Errorf("that is type *DependencyDiscoveryResponse but is nil && this != nil")
 	} else if this == nil {
-		return fmt.Errorf("that is type *SvcDiscoveryResponse but is not nil && this == nil")
+		return fmt.Errorf("that is type *DependencyDiscoveryResponse but is not nil && this == nil")
 	}
 	if len(this.Added) != len(that1.Added) {
 		return fmt.Errorf("Added this(%v) Not Equal that(%v)", len(this.Added), len(that1.Added))
@@ -525,14 +525,14 @@ func (this *SvcDiscoveryResponse) VerboseEqual(that interface{}) error {
 	}
 	return nil
 }
-func (this *SvcDiscoveryResponse) Equal(that interface{}) bool {
+func (this *DependencyDiscoveryResponse) Equal(that interface{}) bool {
 	if that == nil {
 		return this == nil
 	}
 
-	that1, ok := that.(*SvcDiscoveryResponse)
+	that1, ok := that.(*DependencyDiscoveryResponse)
 	if !ok {
-		that2, ok := that.(SvcDiscoveryResponse)
+		that2, ok := that.(DependencyDiscoveryResponse)
 		if ok {
 			that1 = &that2
 		} else {
@@ -899,12 +899,12 @@ func (this *SvcEndpointDiscoveryResponse) Equal(that interface{}) bool {
 	}
 	return true
 }
-func (this *SvcDiscoveryRequest) GoString() string {
+func (this *DependencyDiscoveryRequest) GoString() string {
 	if this == nil {
 		return "nil"
 	}
 	s := make([]string, 0, 5)
-	s = append(s, "&api.SvcDiscoveryRequest{")
+	s = append(s, "&api.DependencyDiscoveryRequest{")
 	if this.Instance != nil {
 		s = append(s, "Instance: "+fmt.Sprintf("%#v", this.Instance)+",\n")
 	}
@@ -914,12 +914,12 @@ func (this *SvcDiscoveryRequest) GoString() string {
 	s = append(s, "}")
 	return strings.Join(s, "")
 }
-func (this *SvcDiscoveryResponse) GoString() string {
+func (this *DependencyDiscoveryResponse) GoString() string {
 	if this == nil {
 		return "nil"
 	}
 	s := make([]string, 0, 6)
-	s = append(s, "&api.SvcDiscoveryResponse{")
+	s = append(s, "&api.DependencyDiscoveryResponse{")
 	if this.Added != nil {
 		s = append(s, "Added: "+fmt.Sprintf("%#v", this.Added)+",\n")
 	}
@@ -1025,7 +1025,7 @@ const _ = grpc.SupportPackageIsVersion4
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type DiscoveryServiceClient interface {
-	StreamSvcs(ctx context.Context, in *SvcDiscoveryRequest, opts ...grpc.CallOption) (DiscoveryService_StreamSvcsClient, error)
+	StreamDependencies(ctx context.Context, in *DependencyDiscoveryRequest, opts ...grpc.CallOption) (DiscoveryService_StreamDependenciesClient, error)
 	StreamSvcConfigs(ctx context.Context, opts ...grpc.CallOption) (DiscoveryService_StreamSvcConfigsClient, error)
 	StreamSvcEndpoints(ctx context.Context, opts ...grpc.CallOption) (DiscoveryService_StreamSvcEndpointsClient, error)
 }
@@ -1038,12 +1038,12 @@ func NewDiscoveryServiceClient(cc *grpc.ClientConn) DiscoveryServiceClient {
 	return &discoveryServiceClient{cc}
 }
 
-func (c *discoveryServiceClient) StreamSvcs(ctx context.Context, in *SvcDiscoveryRequest, opts ...grpc.CallOption) (DiscoveryService_StreamSvcsClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_DiscoveryService_serviceDesc.Streams[0], "/api.DiscoveryService/StreamSvcs", opts...)
+func (c *discoveryServiceClient) StreamDependencies(ctx context.Context, in *DependencyDiscoveryRequest, opts ...grpc.CallOption) (DiscoveryService_StreamDependenciesClient, error) {
+	stream, err := c.cc.NewStream(ctx, &_DiscoveryService_serviceDesc.Streams[0], "/api.DiscoveryService/StreamDependencies", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &discoveryServiceStreamSvcsClient{stream}
+	x := &discoveryServiceStreamDependenciesClient{stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -1053,17 +1053,17 @@ func (c *discoveryServiceClient) StreamSvcs(ctx context.Context, in *SvcDiscover
 	return x, nil
 }
 
-type DiscoveryService_StreamSvcsClient interface {
-	Recv() (*SvcDiscoveryResponse, error)
+type DiscoveryService_StreamDependenciesClient interface {
+	Recv() (*DependencyDiscoveryResponse, error)
 	grpc.ClientStream
 }
 
-type discoveryServiceStreamSvcsClient struct {
+type discoveryServiceStreamDependenciesClient struct {
 	grpc.ClientStream
 }
 
-func (x *discoveryServiceStreamSvcsClient) Recv() (*SvcDiscoveryResponse, error) {
-	m := new(SvcDiscoveryResponse)
+func (x *discoveryServiceStreamDependenciesClient) Recv() (*DependencyDiscoveryResponse, error) {
+	m := new(DependencyDiscoveryResponse)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -1134,7 +1134,7 @@ func (x *discoveryServiceStreamSvcEndpointsClient) Recv() (*SvcEndpointDiscovery
 
 // DiscoveryServiceServer is the server API for DiscoveryService service.
 type DiscoveryServiceServer interface {
-	StreamSvcs(*SvcDiscoveryRequest, DiscoveryService_StreamSvcsServer) error
+	StreamDependencies(*DependencyDiscoveryRequest, DiscoveryService_StreamDependenciesServer) error
 	StreamSvcConfigs(DiscoveryService_StreamSvcConfigsServer) error
 	StreamSvcEndpoints(DiscoveryService_StreamSvcEndpointsServer) error
 }
@@ -1143,8 +1143,8 @@ type DiscoveryServiceServer interface {
 type UnimplementedDiscoveryServiceServer struct {
 }
 
-func (*UnimplementedDiscoveryServiceServer) StreamSvcs(req *SvcDiscoveryRequest, srv DiscoveryService_StreamSvcsServer) error {
-	return status.Errorf(codes.Unimplemented, "method StreamSvcs not implemented")
+func (*UnimplementedDiscoveryServiceServer) StreamDependencies(req *DependencyDiscoveryRequest, srv DiscoveryService_StreamDependenciesServer) error {
+	return status.Errorf(codes.Unimplemented, "method StreamDependencies not implemented")
 }
 func (*UnimplementedDiscoveryServiceServer) StreamSvcConfigs(srv DiscoveryService_StreamSvcConfigsServer) error {
 	return status.Errorf(codes.Unimplemented, "method StreamSvcConfigs not implemented")
@@ -1157,24 +1157,24 @@ func RegisterDiscoveryServiceServer(s *grpc.Server, srv DiscoveryServiceServer) 
 	s.RegisterService(&_DiscoveryService_serviceDesc, srv)
 }
 
-func _DiscoveryService_StreamSvcs_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(SvcDiscoveryRequest)
+func _DiscoveryService_StreamDependencies_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(DependencyDiscoveryRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(DiscoveryServiceServer).StreamSvcs(m, &discoveryServiceStreamSvcsServer{stream})
+	return srv.(DiscoveryServiceServer).StreamDependencies(m, &discoveryServiceStreamDependenciesServer{stream})
 }
 
-type DiscoveryService_StreamSvcsServer interface {
-	Send(*SvcDiscoveryResponse) error
+type DiscoveryService_StreamDependenciesServer interface {
+	Send(*DependencyDiscoveryResponse) error
 	grpc.ServerStream
 }
 
-type discoveryServiceStreamSvcsServer struct {
+type discoveryServiceStreamDependenciesServer struct {
 	grpc.ServerStream
 }
 
-func (x *discoveryServiceStreamSvcsServer) Send(m *SvcDiscoveryResponse) error {
+func (x *discoveryServiceStreamDependenciesServer) Send(m *DependencyDiscoveryResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -1236,8 +1236,8 @@ var _DiscoveryService_serviceDesc = grpc.ServiceDesc{
 	Methods:     []grpc.MethodDesc{},
 	Streams: []grpc.StreamDesc{
 		{
-			StreamName:    "StreamSvcs",
-			Handler:       _DiscoveryService_StreamSvcs_Handler,
+			StreamName:    "StreamDependencies",
+			Handler:       _DiscoveryService_StreamDependencies_Handler,
 			ServerStreams: true,
 		},
 		{
@@ -1256,7 +1256,7 @@ var _DiscoveryService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "api/discovery.proto",
 }
 
-func (m *SvcDiscoveryRequest) Marshal() (dAtA []byte, err error) {
+func (m *DependencyDiscoveryRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1266,12 +1266,12 @@ func (m *SvcDiscoveryRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *SvcDiscoveryRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *DependencyDiscoveryRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *SvcDiscoveryRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *DependencyDiscoveryRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -1295,7 +1295,7 @@ func (m *SvcDiscoveryRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *SvcDiscoveryResponse) Marshal() (dAtA []byte, err error) {
+func (m *DependencyDiscoveryResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1305,12 +1305,12 @@ func (m *SvcDiscoveryResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *SvcDiscoveryResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *DependencyDiscoveryResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *SvcDiscoveryResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *DependencyDiscoveryResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -1566,7 +1566,7 @@ func encodeVarintDiscovery(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
-func (m *SvcDiscoveryRequest) Size() (n int) {
+func (m *DependencyDiscoveryRequest) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -1582,7 +1582,7 @@ func (m *SvcDiscoveryRequest) Size() (n int) {
 	return n
 }
 
-func (m *SvcDiscoveryResponse) Size() (n int) {
+func (m *DependencyDiscoveryResponse) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -1713,7 +1713,7 @@ func sovDiscovery(x uint64) (n int) {
 func sozDiscovery(x uint64) (n int) {
 	return sovDiscovery(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *SvcDiscoveryRequest) Unmarshal(dAtA []byte) error {
+func (m *DependencyDiscoveryRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1736,10 +1736,10 @@ func (m *SvcDiscoveryRequest) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: SvcDiscoveryRequest: wiretype end group for non-group")
+			return fmt.Errorf("proto: DependencyDiscoveryRequest: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: SvcDiscoveryRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: DependencyDiscoveryRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -1803,7 +1803,7 @@ func (m *SvcDiscoveryRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *SvcDiscoveryResponse) Unmarshal(dAtA []byte) error {
+func (m *DependencyDiscoveryResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1826,10 +1826,10 @@ func (m *SvcDiscoveryResponse) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: SvcDiscoveryResponse: wiretype end group for non-group")
+			return fmt.Errorf("proto: DependencyDiscoveryResponse: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: SvcDiscoveryResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: DependencyDiscoveryResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
