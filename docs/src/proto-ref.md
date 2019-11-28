@@ -85,8 +85,8 @@
   
 
 - [api/discovery.proto](#api/discovery.proto)
-    - [DependencyRequest](#api.DependencyRequest)
-    - [DependencyResponse](#api.DependencyResponse)
+    - [DependencyDiscoveryRequest](#api.DependencyDiscoveryRequest)
+    - [DependencyDiscoveryResponse](#api.DependencyDiscoveryResponse)
     - [SvcConfigDiscoveryRequest](#api.SvcConfigDiscoveryRequest)
     - [SvcConfigDiscoveryResponse](#api.SvcConfigDiscoveryResponse)
     - [SvcConfigDiscoveryResponse.UpdatedEntry](#api.SvcConfigDiscoveryResponse.UpdatedEntry)
@@ -738,9 +738,9 @@ Load balance policy.
 
 
 
-<a name="api.DependencyRequest"></a>
+<a name="api.DependencyDiscoveryRequest"></a>
 
-### DependencyRequest
+### DependencyDiscoveryRequest
 
 
 
@@ -753,9 +753,9 @@ Load balance policy.
 
 
 
-<a name="api.DependencyResponse"></a>
+<a name="api.DependencyDiscoveryResponse"></a>
 
-### DependencyResponse
+### DependencyDiscoveryResponse
 
 
 
@@ -863,7 +863,7 @@ config and service endpoints.
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
-| StreamDependency | [DependencyRequest](#api.DependencyRequest) | [DependencyResponse](#api.DependencyResponse) stream |  |
+| StreamDependencies | [DependencyDiscoveryRequest](#api.DependencyDiscoveryRequest) | [DependencyDiscoveryResponse](#api.DependencyDiscoveryResponse) stream |  |
 | StreamSvcConfigs | [SvcConfigDiscoveryRequest](#api.SvcConfigDiscoveryRequest) stream | [SvcConfigDiscoveryResponse](#api.SvcConfigDiscoveryResponse) stream |  |
 | StreamSvcEndpoints | [SvcEndpointDiscoveryRequest](#api.SvcEndpointDiscoveryRequest) stream | [SvcEndpointDiscoveryResponse](#api.SvcEndpointDiscoveryResponse) stream |  |
 

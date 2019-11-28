@@ -86,7 +86,7 @@ func TestDynamicSourceStreamSvcs(t *testing.T) {
 	quit := make(chan struct{})
 
 	// mock discovery service client and stream
-	req := &api.DependencyRequest{Instance: b.Instance}
+	req := &api.DependencyDiscoveryRequest{Instance: b.Instance}
 	stream := NewMockDiscoveryService_StreamDependencyClient(ctrl)
 	addedSvcs := []*service.Service{
 		{Name: "foo"},
@@ -94,11 +94,11 @@ func TestDynamicSourceStreamSvcs(t *testing.T) {
 	removedSvcs := []*service.Service{
 		{Name: "bar"},
 	}
-	stream.EXPECT().Recv().Return(&api.DependencyResponse{
+	stream.EXPECT().Recv().Return(&api.DependencyDiscoveryResponse{
 		Added:   addedSvcs,
 		Removed: removedSvcs,
 	}, nil)
-	stream.EXPECT().Recv().DoAndReturn(func() (*api.DependencyResponse, error) {
+	stream.EXPECT().Recv().DoAndReturn(func() (*api.DependencyDiscoveryResponse, error) {
 		<-quit
 		return nil, io.EOF
 	})

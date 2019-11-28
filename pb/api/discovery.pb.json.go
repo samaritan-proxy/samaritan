@@ -9,71 +9,71 @@ import (
 	"github.com/gogo/protobuf/jsonpb"
 )
 
-// DependencyRequestJSONMarshaler describes the default jsonpb.Marshaler used by all
-// instances of DependencyRequest. This struct is safe to replace or modify but
+// DependencyDiscoveryRequestJSONMarshaler describes the default jsonpb.Marshaler used by all
+// instances of DependencyDiscoveryRequest. This struct is safe to replace or modify but
 // should not be done so concurrently.
-var DependencyRequestJSONMarshaler = new(jsonpb.Marshaler)
+var DependencyDiscoveryRequestJSONMarshaler = new(jsonpb.Marshaler)
 
 // MarshalJSON satisfies the encoding/json Marshaler interface. This method
 // uses the more correct jsonpb package to correctly marshal the message.
-func (m *DependencyRequest) MarshalJSON() ([]byte, error) {
+func (m *DependencyDiscoveryRequest) MarshalJSON() ([]byte, error) {
 	if m == nil {
 		return json.Marshal(nil)
 	}
 	buf := &bytes.Buffer{}
-	if err := DependencyRequestJSONMarshaler.Marshal(buf, m); err != nil {
+	if err := DependencyDiscoveryRequestJSONMarshaler.Marshal(buf, m); err != nil {
 		return nil, err
 	}
 	return buf.Bytes(), nil
 }
 
-var _ json.Marshaler = (*DependencyRequest)(nil)
+var _ json.Marshaler = (*DependencyDiscoveryRequest)(nil)
 
-// DependencyRequestJSONUnmarshaler describes the default jsonpb.Unmarshaler used by all
-// instances of DependencyRequest. This struct is safe to replace or modify but
+// DependencyDiscoveryRequestJSONUnmarshaler describes the default jsonpb.Unmarshaler used by all
+// instances of DependencyDiscoveryRequest. This struct is safe to replace or modify but
 // should not be done so concurrently.
-var DependencyRequestJSONUnmarshaler = new(jsonpb.Unmarshaler)
+var DependencyDiscoveryRequestJSONUnmarshaler = new(jsonpb.Unmarshaler)
 
 // UnmarshalJSON satisfies the encoding/json Unmarshaler interface. This method
 // uses the more correct jsonpb package to correctly unmarshal the message.
-func (m *DependencyRequest) UnmarshalJSON(b []byte) error {
-	return DependencyRequestJSONUnmarshaler.Unmarshal(bytes.NewReader(b), m)
+func (m *DependencyDiscoveryRequest) UnmarshalJSON(b []byte) error {
+	return DependencyDiscoveryRequestJSONUnmarshaler.Unmarshal(bytes.NewReader(b), m)
 }
 
-var _ json.Unmarshaler = (*DependencyRequest)(nil)
+var _ json.Unmarshaler = (*DependencyDiscoveryRequest)(nil)
 
-// DependencyResponseJSONMarshaler describes the default jsonpb.Marshaler used by all
-// instances of DependencyResponse. This struct is safe to replace or modify but
+// DependencyDiscoveryResponseJSONMarshaler describes the default jsonpb.Marshaler used by all
+// instances of DependencyDiscoveryResponse. This struct is safe to replace or modify but
 // should not be done so concurrently.
-var DependencyResponseJSONMarshaler = new(jsonpb.Marshaler)
+var DependencyDiscoveryResponseJSONMarshaler = new(jsonpb.Marshaler)
 
 // MarshalJSON satisfies the encoding/json Marshaler interface. This method
 // uses the more correct jsonpb package to correctly marshal the message.
-func (m *DependencyResponse) MarshalJSON() ([]byte, error) {
+func (m *DependencyDiscoveryResponse) MarshalJSON() ([]byte, error) {
 	if m == nil {
 		return json.Marshal(nil)
 	}
 	buf := &bytes.Buffer{}
-	if err := DependencyResponseJSONMarshaler.Marshal(buf, m); err != nil {
+	if err := DependencyDiscoveryResponseJSONMarshaler.Marshal(buf, m); err != nil {
 		return nil, err
 	}
 	return buf.Bytes(), nil
 }
 
-var _ json.Marshaler = (*DependencyResponse)(nil)
+var _ json.Marshaler = (*DependencyDiscoveryResponse)(nil)
 
-// DependencyResponseJSONUnmarshaler describes the default jsonpb.Unmarshaler used by all
-// instances of DependencyResponse. This struct is safe to replace or modify but
+// DependencyDiscoveryResponseJSONUnmarshaler describes the default jsonpb.Unmarshaler used by all
+// instances of DependencyDiscoveryResponse. This struct is safe to replace or modify but
 // should not be done so concurrently.
-var DependencyResponseJSONUnmarshaler = new(jsonpb.Unmarshaler)
+var DependencyDiscoveryResponseJSONUnmarshaler = new(jsonpb.Unmarshaler)
 
 // UnmarshalJSON satisfies the encoding/json Unmarshaler interface. This method
 // uses the more correct jsonpb package to correctly unmarshal the message.
-func (m *DependencyResponse) UnmarshalJSON(b []byte) error {
-	return DependencyResponseJSONUnmarshaler.Unmarshal(bytes.NewReader(b), m)
+func (m *DependencyDiscoveryResponse) UnmarshalJSON(b []byte) error {
+	return DependencyDiscoveryResponseJSONUnmarshaler.Unmarshal(bytes.NewReader(b), m)
 }
 
-var _ json.Unmarshaler = (*DependencyResponse)(nil)
+var _ json.Unmarshaler = (*DependencyDiscoveryResponse)(nil)
 
 // SvcConfigDiscoveryRequestJSONMarshaler describes the default jsonpb.Marshaler used by all
 // instances of SvcConfigDiscoveryRequest. This struct is safe to replace or modify but
