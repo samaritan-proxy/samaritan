@@ -37,8 +37,6 @@ github.com/juju/loggo v0.0.0-20190526231331-6e530bcce5d8 h1:UUHMLvzt/31azWTN/ifG
 github.com/juju/loggo v0.0.0-20190526231331-6e530bcce5d8/go.mod h1:vgyd7OREkbtVEN/8IXZe5Ooef3LQePvuBm9UWj6ZL8U=
 github.com/kavu/go_reuseport v1.4.0 h1:YIp/96RZ3sJfn0LN+FFkkXIq3H3dfVOdRUtNejhDcxc=
 github.com/kavu/go_reuseport v1.4.0/go.mod h1:CG8Ee7ceMFSMnx/xr25Vm0qXaj2Z4i5PWoUx+JZ5/CU=
-github.com/kirk91/stats v0.0.5-0.20191121063046-9621d5a6d574 h1:L8yhfuKEBD3YVoEFU+noZTPR4XZ7zQ4ox8v9q/G3FFM=
-github.com/kirk91/stats v0.0.5-0.20191121063046-9621d5a6d574/go.mod h1:nEi2z+QVx+VFBqiOv8kFvz7W1QysihMd7denyKSaGlQ=
 github.com/kirk91/stats v0.0.5-0.20191121064423-8a4d70fadb55 h1:457zA1ptnacVw0/vXjJoi4z+NMrDgTQoRCs4z5w1/Jc=
 github.com/kirk91/stats v0.0.5-0.20191121064423-8a4d70fadb55/go.mod h1:nEi2z+QVx+VFBqiOv8kFvz7W1QysihMd7denyKSaGlQ=
 github.com/kirk91/statsd v0.0.0-20190123111500-eca5e2a6416c h1:xiy939HvpMPG4J5Qg6gTrtSEz1xQAUHlvS8m/jRURSE=

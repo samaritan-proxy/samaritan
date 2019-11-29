@@ -18,9 +18,9 @@ import (
 	"encoding/json"
 	"sync"
 
+	"github.com/samaritan-proxy/samaritan/logger"
 	"github.com/samaritan-proxy/samaritan/pb/config/bootstrap"
 	"github.com/samaritan-proxy/samaritan/pb/config/service"
-	"github.com/samaritan-proxy/samaritan/logger"
 )
 
 type serviceWrapper struct {
@@ -115,7 +115,7 @@ func (c *Config) initDynamic() error {
 		return err
 	}
 
-	d.SetSvcHook(c.handleSvcUpdate)
+	d.SetDependencyHook(c.handleDependencyUpdate)
 	d.SetSvcConfigHook(c.handleSvcConfigUpdate)
 	d.SetSvcEndpointHook(c.handleSvcEndpointUpdate)
 	c.d = d
@@ -144,7 +144,7 @@ func (c *Config) MarshalJSON() ([]byte, error) {
 	return json.Marshal(res)
 }
 
-func (c *Config) handleSvcUpdate(added, removed []*service.Service) {
+func (c *Config) handleDependencyUpdate(added, removed []*service.Service) {
 	c.Lock()
 	defer c.Unlock()
 
