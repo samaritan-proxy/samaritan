@@ -26,6 +26,8 @@ import (
 	"github.com/samaritan-proxy/samaritan/pb/config/service"
 )
 
+//go:generate mockgen -package $GOPACKAGE --destination ./mock_discovery_test.go $REPO_URI/pb/api DiscoveryServiceClient,DiscoveryService_StreamDependenciesClient,DiscoveryService_StreamSvcConfigsClient,DiscoveryService_StreamSvcEndpointsClient
+
 type discoveryClient struct {
 	dependency  *dependencyDiscoveryClient
 	svcConfig   *svcConfigDiscoveryClient
@@ -42,7 +44,9 @@ func newDiscoveryClient(stub api.DiscoveryServiceClient) *discoveryClient {
 
 func (c *discoveryClient) StreamDependencies(ctx context.Context, inst *common.Instance, hook dependencyHook) {
 	wrappedHook := func(added, removed []*service.Service) {
-		hook(added, removed)
+		if hook != nil {
+			hook(added, removed)
+		}
 		// subscribe the added services
 		for _, svc := range added {
 			c.svcConfig.Subscribe(svc.Name)
@@ -51,7 +55,7 @@ func (c *discoveryClient) StreamDependencies(ctx context.Context, inst *common.I
 		// unsubscribe the removed services
 		for _, svc := range removed {
 			c.svcConfig.Unsubscribe(svc.Name)
-			c.svcEndpoint.Subscribe(svc.Name)
+			c.svcEndpoint.Unsubscribe(svc.Name)
 		}
 	}
 	impl := c.dependency
@@ -100,7 +104,7 @@ func (c *dependencyDiscoveryClient) Run(ctx context.Context, inst *common.Instan
 		}
 
 		interval := time.Duration((1 + (2*rand.Float64()-1)*jitter) * float64(baseInterval))
-		logger.Warnf("The discovery loop of dependecies terminated unexpectedly, retry after %s", interval)
+		logger.Warnf("The discovery loop of dependencies terminated unexpectedly, retry after %s", interval)
 		t := time.NewTimer(interval)
 		select {
 		case <-t.C:
@@ -114,14 +118,14 @@ func (c *dependencyDiscoveryClient) run(ctx context.Context, inst *common.Instan
 	req := &api.DependencyDiscoveryRequest{Instance: inst}
 	stream, err := c.StreamDependencies(ctx, req)
 	if err != nil {
-		logger.Warnf("Fail to create dependencies stream: %v", err)
+		logger.Warnf("Fail to create dependencies discovery stream: %v", err)
 		return
 	}
 
 	for {
 		resp, err := stream.Recv()
 		if err != nil {
-			logger.Warnf("Recv from dependencies stream failed: %v", err)
+			logger.Warnf("Recv from dependencies discovery stream failed: %v", err)
 			return
 		}
 
@@ -268,9 +272,10 @@ type svcDiscoveryClient struct {
 
 func newSvcDiscoveryClient(scope string, streamMaker svcDiscoveryStreamMaker) *svcDiscoveryClient {
 	return &svcDiscoveryClient{
-		subscribed: make(map[string]struct{}, 8),
-		subCh:      make(chan string, 8),
-		unsubCh:    make(chan string, 8),
+		scope:      scope,
+		subscribed: make(map[string]struct{}, 16),
+		subCh:      make(chan string, 16),
+		unsubCh:    make(chan string, 16),
 		newStream:  streamMaker,
 	}
 }
@@ -322,13 +327,13 @@ func (c *svcDiscoveryClient) Run(ctx context.Context) {
 func (c *svcDiscoveryClient) run(ctx context.Context) {
 	stream, err := c.newStream(ctx)
 	if err != nil {
-		logger.Warnf("Fail to create service %s stream: %v", c.scope, err)
+		logger.Warnf("Fail to create service %s discovery stream: %v", c.scope, err)
 		return
 	}
 
 	// resubscribe the services.
 	if err := c.resubscribe(stream); err != nil {
-		logger.Warnf("Resubscribe services on %s stream failed: %v", c.scope, err)
+		logger.Warnf("Resubscribe services on %s discovery stream failed: %v", c.scope, err)
 		return
 	}
 

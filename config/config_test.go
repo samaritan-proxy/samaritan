@@ -24,8 +24,8 @@ import (
 	gomock "github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/samaritan-proxy/samaritan/pb/config/bootstrap"
 	"github.com/samaritan-proxy/samaritan/pb/common"
+	"github.com/samaritan-proxy/samaritan/pb/config/bootstrap"
 	"github.com/samaritan-proxy/samaritan/pb/config/hc"
 	"github.com/samaritan-proxy/samaritan/pb/config/protocol"
 	"github.com/samaritan-proxy/samaritan/pb/config/service"
@@ -166,7 +166,7 @@ func TestInitDynamic(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	d := NewMockDynamicSource(ctrl)
-	d.EXPECT().SetSvcHook(gomock.Any())
+	d.EXPECT().SetDependencyHook(gomock.Any())
 	d.EXPECT().SetSvcConfigHook(gomock.Any())
 	d.EXPECT().SetSvcEndpointHook(gomock.Any())
 	d.EXPECT().Serve()
@@ -180,7 +180,7 @@ func TestInitDynamic(t *testing.T) {
 	time.Sleep(time.Millisecond * 100) // wait dynamic source serving.
 }
 
-func TestHandleSvcUpdate(t *testing.T) {
+func TestHandleDependencyUpdate(t *testing.T) {
 	b := &bootstrap.Bootstrap{
 		Admin: &bootstrap.Admin{
 			Bind: &common.Address{
@@ -198,14 +198,14 @@ func TestHandleSvcUpdate(t *testing.T) {
 		{Name: "foo"},
 		{Name: "bar"},
 	}
-	c.handleSvcUpdate(added, nil)
+	c.handleDependencyUpdate(added, nil)
 	assert.Equal(t, 2, len(c.sws))
 
 	removed := []*service.Service{
 		{Name: "bar"},
 		{Name: "zoo"},
 	}
-	c.handleSvcUpdate(nil, removed)
+	c.handleDependencyUpdate(nil, removed)
 	assert.Equal(t, 1, len(c.sws))
 
 	e := <-evtCh
@@ -239,7 +239,7 @@ func TestHandleSvcConfigUpdate(t *testing.T) {
 		addedSvcs := []*service.Service{
 			{Name: "foo"},
 		}
-		c.handleSvcUpdate(addedSvcs, nil)
+		c.handleDependencyUpdate(addedSvcs, nil)
 
 		newCfg := new(service.Config)
 		c.handleSvcConfigUpdate("foo", newCfg)
@@ -252,7 +252,7 @@ func TestHandleSvcConfigUpdate(t *testing.T) {
 		assert.NoError(t, err)
 		evtCh := c.Subscribe()
 
-		c.handleSvcUpdate(
+		c.handleDependencyUpdate(
 			[]*service.Service{{Name: "foo"}},
 			nil,
 		)
@@ -308,7 +308,7 @@ func TestHandleSvEndpointUpdate(t *testing.T) {
 		addedSvcs := []*service.Service{
 			{Name: "foo"},
 		}
-		c.handleSvcUpdate(addedSvcs, nil)
+		c.handleDependencyUpdate(addedSvcs, nil)
 
 		added := []*service.Endpoint{
 			{Address: &common.Address{Ip: "127.0.0.1", Port: 8888}},
@@ -323,7 +323,7 @@ func TestHandleSvEndpointUpdate(t *testing.T) {
 		assert.NoError(t, err)
 		evtCh := c.Subscribe()
 
-		c.handleSvcUpdate(
+		c.handleDependencyUpdate(
 			[]*service.Service{{Name: "foo"}},
 			nil,
 		)
