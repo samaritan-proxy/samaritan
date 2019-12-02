@@ -347,7 +347,6 @@ func (c *svcDiscoveryClient) run(ctx context.Context) {
 		c.loopRecv(stream)
 	}()
 	c.loopSend(stream, recvDone)
-	return
 }
 
 func (c *svcDiscoveryClient) resubscribe(stream svcDiscoveryStream) error {
@@ -373,7 +372,7 @@ func (c *svcDiscoveryClient) resubscribe(stream svcDiscoveryStream) error {
 func (c *svcDiscoveryClient) cleanSubChLocked() {
 	for {
 		select {
-		case _ = <-c.subCh:
+		case <-c.subCh:
 		default:
 			return
 		}
@@ -383,7 +382,7 @@ func (c *svcDiscoveryClient) cleanSubChLocked() {
 func (c *svcDiscoveryClient) cleanUnsubChLocked() {
 	for {
 		select {
-		case _ = <-c.unsubCh:
+		case <-c.unsubCh:
 		default:
 			return
 		}
