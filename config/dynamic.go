@@ -38,8 +38,8 @@ type svcEndpointHook func(svcName string, added, removed []*service.Endpoint)
 
 // DynamicSource represents the dynamic config source.
 type DynamicSource interface {
-	// SetSvcHook sets a hook which will be called
-	// when a service is added or removed. It must be
+	// SetDependencyHook sets a hook which will be called
+	// when a dependency is added or removed. It must be
 	// called before Serve.
 	SetDependencyHook(hook dependencyHook)
 	// SetSvcConfigHook sets a hook which wil be called
