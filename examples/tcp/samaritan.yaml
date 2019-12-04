@@ -1,13 +1,13 @@
 admin:
   bind:
-    ip: 127.0.0.1
+    ip: 0.0.0.0
     port: 12345
 
 log:
   level: INFO
 
 static_services:
-  - name: http-server
+  - name: tcp-demo
     config:
       listener:
         address:

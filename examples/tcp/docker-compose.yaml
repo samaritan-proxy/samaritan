@@ -6,6 +6,7 @@ services:
       - ./samaritan.yaml:/etc/samaritan.yaml
     ports:
       - "80:80"
+      - "12345:12345"
     networks:
       - samaritan
 
