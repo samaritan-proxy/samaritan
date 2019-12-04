@@ -1,0 +1,19 @@
+version: "3.7"
+services:
+  proxy:
+    image: samaritanproxy/samaritan:latest
+    volumes:
+      - ./samaritan.yaml:/etc/samaritan.yaml
+    ports:
+      - "80:80"
+    networks:
+      - samaritan
+
+  http-server:
+    build:
+      context: .
+      dockerfile: Dockerfile-httpserver
+    network_mode: "service:proxy"
+
+networks:
+  samaritan: {}
