@@ -1,0 +1,59 @@
+version: "3.7"
+services:
+  redis1:
+    image: redis:5-alpine
+    volumes:
+      - ./redis.conf:/etc/redis.conf
+    command: redis-server /etc/redis.conf
+    networks:
+      samaritan:
+        ipv4_address: 176.17.0.2
+  redis2:
+    image: redis:5-alpine
+    volumes:
+      - ./redis.conf:/etc/redis.conf
+    command: redis-server /etc/redis.conf
+    networks:
+      samaritan:
+        ipv4_address: 176.17.0.3
+  redis3:
+    image: redis:5-alpine
+    volumes:
+      - ./redis.conf:/etc/redis.conf
+    command: redis-server /etc/redis.conf
+    networks:
+      samaritan:
+        ipv4_address: 176.17.0.4
+  redis-cluster-setup:
+    image: redis:5-alpine
+    command: sh -c "
+      sleep 5
+      && yes yes | redis-cli
+      --cluster create 176.17.0.2:7000 176.17.0.3:7000 176.17.0.4:7000
+      --cluster-replicas 0
+      && redis-cli --cluster check 176.17.0.2:7000"
+    networks:
+      - samaritan
+    depends_on:
+      - redis1
+      - redis2
+      - redis3
+
+  proxy:
+    image: samaritanproxy/samaritan:latest
+    volumes:
+      - ./samaritan.yaml:/etc/samaritan.yaml
+    networks:
+      samaritan:
+        ipv4_address: 176.17.0.8
+    ports:
+      - "12345:12345"
+      - "6379:6379"
+
+networks:
+  samaritan:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 176.17.0.0/16
