@@ -256,7 +256,33 @@ You could see the response: `hello, world!`
 
 ### Redis
 
-TBD
+In this example, we show how to use Samaritan as a redis cluster proxy.
+
+**Step1: Start all containers including redis-cluster and proxy**
+
+```sh
+$ git clone --depth 1 https://github.com/samaritan-proxy/samaritan.git /tmp/samaritan
+$ cd /tmp/samaritan/examples/redis
+$ docker-compose up
+```
+
+**Step2: Issue commands using [redis-cli]**
+
+```sh
+$ redis-cli set a 1
+OK
+$ redis-cli get a
+"1"
+$ redis-cli mset a 1 b 2
+OK
+$ redis-cli mget a b
+1) "1"
+2) "2"
+$ redis-cli --scan
+b
+a
+```
+All supported commands could found in [here][redis supported commands].
 
 
 [release page]: https://github.com/samaritan-proxy/samaritan/releases
@@ -266,6 +292,7 @@ TBD
 [gRPC]: https://grpc.io
 [Docker]: https://docs.docker.com/
 [Docker Compose]: https://docs.docker.com/compose/
+[redis-cli]: https://redis.io/topics/rediscli
 
 [admin api]:
 
@@ -276,3 +303,5 @@ TBD
 [static service message]: proto-ref.md#staticservice
 [dynamic source message]: proto-ref.md#bootstrap.ConfigSource
 [discovery service message]: proto-ref.md#discoveryservice
+
+[redis supported commands]: https://samaritan-proxy.github.io/docs/arch/protocol/redis/redis/#commands
