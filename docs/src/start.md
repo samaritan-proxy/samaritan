@@ -232,6 +232,30 @@ The communication way between them is grpc, and [here][discovery service message
 
 ## Examples
 
+We have created some sandboxes using [Docker] and [Docker Compose] to show how to use Samaritan. To run them, please make sure you have docker and docker-compose installed.
+
+### TCP
+
+In this example, we show how to use Samaritan as a L4 proxy.
+
+**Step 1: Start all containers including http-server and proxy**
+
+```sh
+$ git clone --depth 1 https://github.com/samaritan-proxy/samaritan.git /tmp/samaritan
+$ cd /tmp/samaritan/examples/tcp
+$ docker-compose up
+```
+
+**Step 2: View http://127.0.0.1 using curl or browser**
+
+```sh
+$ curl http://127.0.0.1
+```
+
+You could see the response: `hello, world!`
+
+### Redis
+
 TBD
 
 
@@ -240,6 +264,8 @@ TBD
 [example.com]: http://example.com
 [Prometheus]: https://prometheus.io
 [gRPC]: https://grpc.io
+[Docker]: https://docs.docker.com/
+[Docker Compose]: https://docs.docker.com/compose/
 
 [admin api]:
 
