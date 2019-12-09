@@ -20,7 +20,9 @@ set -o pipefail
 
 force=0
 readonly path=./pb
+readonly path_api=$path/api
 readonly doc_path=./docs/src
+readonly swagger_path=./docs/swagger
 readonly protoc_gen_gogo_repo="github.com/gogo/protobuf"
 readonly protoc_gen_validate_repo="github.com/envoyproxy/protoc-gen-validate"
 
@@ -51,12 +53,23 @@ gen_doc() {
     _path=$1
     mkdir -p ${doc_path}
     protoc \
-        --plugin=protoc-gen-doc=${GOPATH}/bin/protoc-gen-doc \
         -I ${path} \
         -I "$GOPATH/src/$protoc_gen_gogo_repo" \
         -I "$GOPATH/src/$protoc_gen_validate_repo" \
         --doc_out=${doc_path} \
         --doc_opt=markdown,proto-ref.md \
+        `find ${_path} -name '*.proto'`
+}
+
+gen_swagger() {
+    _path=$1
+    mkdir -p ${swagger_path}
+
+    protoc \
+        -I ${path} \
+        -I "$GOPATH/src/$protoc_gen_gogo_repo" \
+        -I "$GOPATH/src/$protoc_gen_validate_repo" \
+        --swagger_out=logtostderr=true:${swagger_path} \
         `find ${_path} -name '*.proto'`
 }
 
@@ -133,6 +146,7 @@ main() {
     IFS=$'\n'
     walk "${path}"
     gen_doc "${path}"
+    gen_swagger "${path_api}"
     IFS=$oldifs
 }
 

@@ -1,0 +1,447 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "api/discovery.proto",
+    "version": "version not set"
+  },
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {},
+  "definitions": {
+    "ATCPCheckerAction": {
+      "type": "object",
+      "properties": {
+        "send": {
+          "type": "string",
+          "format": "byte",
+          "description": "This is used to send a data along with a connection opening."
+        },
+        "expect": {
+          "type": "string",
+          "format": "byte",
+          "description": "Expecting content returned from the server."
+        }
+      },
+      "description": "Action represents a set of requests from Samaritan to the server\nand what the expected server returns."
+    },
+    "CompressionMethod": {
+      "type": "string",
+      "enum": [
+        "SNAPPY",
+        "MOCK"
+      ],
+      "default": "SNAPPY"
+    },
+    "EndpointState": {
+      "type": "string",
+      "enum": [
+        "UP",
+        "DOWN",
+        "UNKNOWN"
+      ],
+      "default": "UP",
+      "title": "- UP: healthy\n - DOWN: unhealthy\n - UNKNOWN: unknown"
+    },
+    "apiDependencyDiscoveryResponse": {
+      "type": "object",
+      "properties": {
+        "added": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/serviceService"
+          },
+          "description": "Added service."
+        },
+        "removed": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/serviceService"
+          },
+          "description": "Removed service."
+        }
+      }
+    },
+    "apiSvcConfigDiscoveryResponse": {
+      "type": "object",
+      "properties": {
+        "updated": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/serviceConfig"
+          },
+          "description": "Update of configuration."
+        }
+      }
+    },
+    "apiSvcEndpointDiscoveryResponse": {
+      "type": "object",
+      "properties": {
+        "svc_name": {
+          "type": "string",
+          "description": "Name of service which endpoints had updated."
+        },
+        "added": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/serviceEndpoint"
+          },
+          "description": "Added endpoints."
+        },
+        "removed": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/serviceEndpoint"
+          },
+          "description": "Removed endpoints."
+        }
+      }
+    },
+    "commonAddress": {
+      "type": "object",
+      "properties": {
+        "ip": {
+          "type": "string",
+          "description": "IP address, IPv4 or IPv6."
+        },
+        "port": {
+          "type": "integer",
+          "format": "int64",
+          "description": "Port, [0, 65535]."
+        }
+      }
+    },
+    "commonInstance": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "The id of this instance, if id is not define, it will generate by ip and\nadmin port."
+        },
+        "version": {
+          "type": "string",
+          "description": "Version of this instance running now.\nThis field is automatically populated by Samaritan \ndoes not require to specify by user."
+        },
+        "belong": {
+          "type": "string",
+          "description": "The service name which this instance belongs to.\nIt's required when you want to change the behavior of Sam at runtime, such as\nupdate proxy policy, update service endpoints, etc. If two instances belong to\nthe same service, it will be treated in one group."
+        }
+      }
+    },
+    "hcATCPChecker": {
+      "type": "object",
+      "properties": {
+        "action": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ATCPCheckerAction"
+          },
+          "description": "List of actions.\nAll actions will execute during the health check,\nif one of the actions fails, this health check will be considered as failed.\nNeed at least one action."
+        }
+      },
+      "description": "ATCP checker config."
+    },
+    "hcHealthCheck": {
+      "type": "object",
+      "properties": {
+        "interval": {
+          "type": "string",
+          "description": "The interval between two consecutive health checks.\nMust be greater than 0s."
+        },
+        "timeout": {
+          "type": "string",
+          "description": "The timeout when doing a health check.\nMust be greater than 0s."
+        },
+        "fall_threshold": {
+          "type": "integer",
+          "format": "int64",
+          "description": "A server will be considered as dead after # consecutive unsuccessful health checks.\nMust be greater than 0."
+        },
+        "rise_threshold": {
+          "type": "integer",
+          "format": "int64",
+          "description": "A server will be considered as operational after # consecutive successful health checks.\nMust be greater than 0."
+        },
+        "tcp_checker": {
+          "$ref": "#/definitions/hcTCPChecker"
+        },
+        "atcp_checker": {
+          "$ref": "#/definitions/hcATCPChecker"
+        },
+        "mysql_checker": {
+          "$ref": "#/definitions/hcMySQLChecker"
+        },
+        "redis_checker": {
+          "$ref": "#/definitions/hcRedisChecker"
+        }
+      },
+      "description": "Configuration of health check."
+    },
+    "hcMySQLChecker": {
+      "type": "object",
+      "properties": {
+        "username": {
+          "type": "string",
+          "description": "MySQL server username, not null."
+        }
+      },
+      "description": "MySQL checker config."
+    },
+    "hcRedisChecker": {
+      "type": "object",
+      "properties": {
+        "password": {
+          "type": "string",
+          "description": "Redis server password, if the password is not empty,\nthe AUTH command will be sent before the PING command."
+        }
+      },
+      "description": "Redis checker config."
+    },
+    "hcTCPChecker": {
+      "type": "object",
+      "description": "TCP checker config."
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "type_url": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "protocolMySQLOption": {
+      "type": "object",
+      "description": "MySQL protocol option."
+    },
+    "protocolProtocol": {
+      "type": "string",
+      "enum": [
+        "UNKNOWN",
+        "TCP",
+        "MySQL",
+        "Redis"
+      ],
+      "default": "UNKNOWN",
+      "description": "Protocol enum.\n\n - TCP: TCP\n - MySQL: MySQL\n - Redis: Redis"
+    },
+    "protocolRedisOption": {
+      "type": "object",
+      "properties": {
+        "read_strategy": {
+          "$ref": "#/definitions/redisReadStrategy",
+          "description": "Strategy of a read only command."
+        },
+        "compression": {
+          "$ref": "#/definitions/redisCompression",
+          "description": "Configuration of compression."
+        }
+      },
+      "description": "Redis protocol option."
+    },
+    "protocolTCPOption": {
+      "type": "object",
+      "description": "TCP protocol option."
+    },
+    "redisCompression": {
+      "type": "object",
+      "properties": {
+        "enable": {
+          "type": "boolean",
+          "format": "boolean",
+          "description": "Switch of compress, default is off.\nNOTE: Uncompress will always work."
+        },
+        "method": {
+          "$ref": "#/definitions/CompressionMethod",
+          "description": "Compression algorithm used in compression filter."
+        },
+        "threshold": {
+          "type": "integer",
+          "format": "int64",
+          "description": "Value will be ignored when byte length of value is less than the\nthreshold, must be greater than 0."
+        }
+      },
+      "description": "Configuration of compression."
+    },
+    "redisReadStrategy": {
+      "type": "string",
+      "enum": [
+        "MASTER",
+        "SLAVE",
+        "BOTH"
+      ],
+      "default": "MASTER",
+      "description": "Strategy of a read only command.\n\n - MASTER: Read from master nodes.\n - SLAVE: Read from slave nodes.\n - BOTH: Read from all nodes."
+    },
+    "runtimeStreamError": {
+      "type": "object",
+      "properties": {
+        "grpc_code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "http_code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "http_status": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    },
+    "serviceConfig": {
+      "type": "object",
+      "properties": {
+        "listener": {
+          "$ref": "#/definitions/serviceListener",
+          "description": "Listener config, must be set."
+        },
+        "health_check": {
+          "$ref": "#/definitions/hcHealthCheck",
+          "description": "Health check will be disabled when not defined."
+        },
+        "connect_timeout": {
+          "type": "string",
+          "description": "The maximum time to wait for a connection attempt to a server to succeed, default is 3s."
+        },
+        "idle_timeout": {
+          "type": "string",
+          "description": "The maximum inactivity time on the client side, default is 10min."
+        },
+        "lb_policy": {
+          "$ref": "#/definitions/serviceLoadBalancePolicy"
+        },
+        "protocol": {
+          "$ref": "#/definitions/protocolProtocol",
+          "description": "Protocol of service, can not be UNKNOWN."
+        },
+        "tcp_option": {
+          "$ref": "#/definitions/protocolTCPOption"
+        },
+        "redis_option": {
+          "$ref": "#/definitions/protocolRedisOption"
+        },
+        "mysql_option": {
+          "$ref": "#/definitions/protocolMySQLOption"
+        }
+      },
+      "description": "Configuration of service,\ncontains configuration information required for the processor to run."
+    },
+    "serviceEndpoint": {
+      "type": "object",
+      "properties": {
+        "address": {
+          "$ref": "#/definitions/commonAddress",
+          "description": "Address of endpoint, must be set."
+        },
+        "state": {
+          "$ref": "#/definitions/EndpointState",
+          "description": "Healthy state of endpoint.\nWhen state is DOWN, this host will not be selected for load balancing."
+        },
+        "type": {
+          "$ref": "#/definitions/serviceEndpointType",
+          "description": "Type of endpoints.\nWhen all hosts whose type is main are in the DOWN state, \nthe host whose type is backup will be selected."
+        }
+      },
+      "description": "Endpoint represents an endpoint of service."
+    },
+    "serviceEndpointType": {
+      "type": "string",
+      "enum": [
+        "MAIN",
+        "BACKUP"
+      ],
+      "default": "MAIN",
+      "title": "- MAIN: main\n - BACKUP: backup"
+    },
+    "serviceListener": {
+      "type": "object",
+      "properties": {
+        "address": {
+          "$ref": "#/definitions/commonAddress",
+          "description": "The address that the listener should listen on, must be set."
+        },
+        "connection_limit": {
+          "type": "integer",
+          "format": "int64",
+          "description": "The limit of connections, new connections that exceed this value are immediately be closed.\nDefault value is 0 that the limit will be disable."
+        }
+      },
+      "description": "Listener configuration."
+    },
+    "serviceLoadBalancePolicy": {
+      "type": "string",
+      "enum": [
+        "ROUND_ROBIN",
+        "LEAST_CONNECTION",
+        "RANDOM",
+        "CLUSTER_PROVIDED"
+      ],
+      "default": "ROUND_ROBIN",
+      "description": "Load balance policy.\n\n - ROUND_ROBIN: RoundRobin\n - LEAST_CONNECTION: LeastConnection\n - RANDOM: Random\n - CLUSTER_PROVIDED: Provided by redis cluster"
+    },
+    "serviceService": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of service."
+        }
+      },
+      "description": "Service represents a service."
+    }
+  },
+  "x-stream-definitions": {
+    "apiDependencyDiscoveryResponse": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "$ref": "#/definitions/apiDependencyDiscoveryResponse"
+        },
+        "error": {
+          "$ref": "#/definitions/runtimeStreamError"
+        }
+      },
+      "title": "Stream result of apiDependencyDiscoveryResponse"
+    },
+    "apiSvcConfigDiscoveryResponse": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "$ref": "#/definitions/apiSvcConfigDiscoveryResponse"
+        },
+        "error": {
+          "$ref": "#/definitions/runtimeStreamError"
+        }
+      },
+      "title": "Stream result of apiSvcConfigDiscoveryResponse"
+    },
+    "apiSvcEndpointDiscoveryResponse": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "$ref": "#/definitions/apiSvcEndpointDiscoveryResponse"
+        },
+        "error": {
+          "$ref": "#/definitions/runtimeStreamError"
+        }
+      },
+      "title": "Stream result of apiSvcEndpointDiscoveryResponse"
+    }
+  }
+}
