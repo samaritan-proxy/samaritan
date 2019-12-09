@@ -44,6 +44,18 @@ func (mr *MockDynamicSourceMockRecorder) Serve() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Serve", reflect.TypeOf((*MockDynamicSource)(nil).Serve))
 }
 
+// SetDependencyHook mocks base method
+func (m *MockDynamicSource) SetDependencyHook(arg0 dependencyHook) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetDependencyHook", arg0)
+}
+
+// SetDependencyHook indicates an expected call of SetDependencyHook
+func (mr *MockDynamicSourceMockRecorder) SetDependencyHook(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetDependencyHook", reflect.TypeOf((*MockDynamicSource)(nil).SetDependencyHook), arg0)
+}
+
 // SetSvcConfigHook mocks base method
 func (m *MockDynamicSource) SetSvcConfigHook(arg0 svcConfigHook) {
 	m.ctrl.T.Helper()
@@ -66,18 +78,6 @@ func (m *MockDynamicSource) SetSvcEndpointHook(arg0 svcEndpointHook) {
 func (mr *MockDynamicSourceMockRecorder) SetSvcEndpointHook(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetSvcEndpointHook", reflect.TypeOf((*MockDynamicSource)(nil).SetSvcEndpointHook), arg0)
-}
-
-// SetSvcHook mocks base method
-func (m *MockDynamicSource) SetSvcHook(arg0 svcHook) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetSvcHook", arg0)
-}
-
-// SetSvcHook indicates an expected call of SetSvcHook
-func (mr *MockDynamicSourceMockRecorder) SetSvcHook(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetSvcHook", reflect.TypeOf((*MockDynamicSource)(nil).SetSvcHook), arg0)
 }
 
 // Stop mocks base method
