@@ -16,7 +16,6 @@ package redis
 
 import (
 	"bytes"
-	"strings"
 	"sync"
 )
 
@@ -85,13 +84,6 @@ func hashtag(b []byte) []byte {
 		return b
 	}
 	return b[i+1 : j]
-}
-
-func getCommandFromResp(resp *RespValue) string {
-	if resp == nil || len(resp.Array) == 0 {
-		return ""
-	}
-	return strings.ToLower(string(resp.Array[0].Text))
 }
 
 var bufferPool = sync.Pool{

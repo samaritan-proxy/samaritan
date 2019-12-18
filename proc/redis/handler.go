@@ -233,3 +233,21 @@ func handleScan(u *upstream, req *rawRequest) {
 	host := hosts[nodeIdx]
 	u.MakeRequestToHost(host.Addr, simpleReq)
 }
+
+func handleHotKey(u *upstream, req *rawRequest) {
+	var summary bytes.Buffer
+
+	keys := u.HotKeys()
+	summary.WriteString(fmt.Sprintf(
+		"Collect %d keys in this period!", len(keys),
+	))
+	for _, key := range keys {
+		summary.WriteString(fmt.Sprintf(
+			"\ncounter: %d  keyname: %s",
+			key.Counter.Value(),
+			key.Name,
+		))
+	}
+
+	req.SetResponse(newSimpleBytes(summary.Bytes()))
+}

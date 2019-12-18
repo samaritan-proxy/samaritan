@@ -195,33 +195,30 @@ var decompress = func(src []byte) ([]byte, error) {
 	return dst, nil
 }
 
-var defaultCpsFilterBuilder filterBuilder = filterBuilder(new(cpsFilterBuilder))
-
-type cpsFilterBuilder struct{}
-
-func (*cpsFilterBuilder) Build(p filterBuildParams) (Filter, error) {
-	return &CompressFilter{
-		cfg:   p.Config,
-		stats: p.Scope,
-	}, nil
-}
-
-type CompressFilter struct {
+type compressFilter struct {
 	cfg   *config
 	stats *stats.Scope
 }
 
-func (*CompressFilter) isCommandDisabled(command string) bool {
+func newCompressFilter(cfg *config) Filter {
+	f := &compressFilter{
+		cfg: cfg,
+	}
+	// TODO: add stats
+	return f
+}
+
+func (compressFilter) isCommandDisabled(command string) bool {
 	_, ok := bannedCmdInCps[command]
 	return ok
 }
 
-func (*CompressFilter) needDecompress(command string) bool {
+func (compressFilter) needDecompress(command string) bool {
 	_, ok := wkSkipCheckCmdsInDecps[command]
 	return !ok
 }
 
-func (f *CompressFilter) compress(commandName string, resp *RespValue) {
+func (f *compressFilter) compress(command string, resp *RespValue) {
 	if resp == nil {
 		return
 	}
@@ -235,7 +232,7 @@ func (f *CompressFilter) compress(commandName string, resp *RespValue) {
 	// 2: like "HSET", "HMSET", "HSETNX", offset is 3
 	// 	command key field1 [value1] field2 [value2] ...
 	//	command key time [value]
-	switch commandName {
+	switch command {
 	case "set", "mset", "getset", "setnx":
 		offset = 2
 	case "hset", "hmset", "hsetnx", "psetex", "setex":
@@ -245,7 +242,6 @@ func (f *CompressFilter) compress(commandName string, resp *RespValue) {
 	}
 
 	cpsCfg := f.cfg.GetRedisOption().GetCompression()
-
 	for i := offset; i < len(resp.Array); i += 2 {
 		r := resp.Array[i]
 		if uint32(len(r.Text)) < cpsCfg.Threshold {
@@ -256,7 +252,7 @@ func (f *CompressFilter) compress(commandName string, resp *RespValue) {
 	}
 }
 
-func (f *CompressFilter) decompress(resp *RespValue) {
+func (f *compressFilter) decompress(resp *RespValue) {
 	if resp == nil {
 		return
 	}
@@ -276,7 +272,7 @@ func (f *CompressFilter) decompress(resp *RespValue) {
 	}
 }
 
-func (f *CompressFilter) Do(req *simpleRequest) FilterStatus {
+func (f *compressFilter) Do(cmd string, req *simpleRequest) FilterStatus {
 	// skip processing when compression config is null
 	if f == nil ||
 		f.cfg == nil ||
@@ -285,31 +281,27 @@ func (f *CompressFilter) Do(req *simpleRequest) FilterStatus {
 		return Continue
 	}
 
-	var (
-		commandName = getCommandFromResp(req.body)
-		cpsCfg      = f.cfg.GetRedisOption().GetCompression()
-	)
-
-	if f.needDecompress(commandName) {
+	if f.needDecompress(cmd) {
 		req.RegisterHook(func(request *simpleRequest) {
 			f.decompress(request.resp)
 		})
 	}
 
+	cpsCfg := f.cfg.GetRedisOption().GetCompression()
 	if !cpsCfg.Enable {
 		return Continue
 	}
 
-	if f.isCommandDisabled(commandName) {
-		errStr := fmt.Sprintf("command: %s is disabled in compress mode", commandName)
+	if f.isCommandDisabled(cmd) {
+		errStr := fmt.Sprintf("command '%s' is disabled in compress mode", cmd)
 		req.SetResponse(newError(errStr))
 		return Stop
 	}
 
-	f.compress(commandName, req.body)
+	f.compress(cmd, req.body)
 	return Continue
 }
 
-func (*CompressFilter) Destroy() {
+func (*compressFilter) Destroy() {
 	// do nothing
 }

@@ -1,6 +1,8 @@
 package hotkey
 
-import "sync"
+import (
+	"sync"
+)
 
 // Counter is used to record the actual hit count of visited keys.
 // To minimize the memory footprint, only the keys that are frequently
@@ -55,7 +57,8 @@ func (c *Counter) Latch() map[string]uint64 {
 }
 
 func (c *Counter) reset() {
-	c.items = nil
+	// TODO: reuse the old datastructures.
+	c.items = make(map[string]*itemNode)
 	c.freqHead = nil
 }
 
@@ -141,6 +144,8 @@ func (n *freqNode) PopItem() *itemNode {
 }
 
 func (n *freqNode) AppendItem(item *itemNode) {
+	item.freqNode = n
+
 	if n.itemHead == nil {
 		n.itemHead = item
 		n.itemTail = item
