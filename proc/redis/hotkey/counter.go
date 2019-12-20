@@ -12,13 +12,15 @@ import (
 type Counter struct {
 	rwmu     sync.RWMutex
 	capacity uint8
+	freeCb   func()
 	items    map[string]*itemNode
 	freqHead *freqNode
 }
 
-func newCounter(capacity uint8) *Counter {
+func newCounter(capacity uint8, freeCb func()) *Counter {
 	return &Counter{
 		capacity: capacity,
+		freeCb:   freeCb,
 		items:    make(map[string]*itemNode),
 	}
 }
@@ -35,7 +37,7 @@ func (c *Counter) Hit(key string) {
 	}
 
 	// record
-	if uint8(len(c.items)) > c.capacity {
+	if uint8(len(c.items)) >= c.capacity {
 		// evict the least frequently used item
 		c.evict()
 	}
@@ -74,7 +76,7 @@ func (c *Counter) increment(item *itemNode) {
 		targetFreqNode = curFreqNode.next
 	}
 
-	item.FreeMySelf()
+	item.Free()
 	targetFreqNode.AppendItem(item)
 
 	if curFreqNode.itemHead != nil {
@@ -85,7 +87,7 @@ func (c *Counter) increment(item *itemNode) {
 	if c.freqHead == curFreqNode {
 		c.freqHead = targetFreqNode
 	}
-	curFreqNode.RemoveMySelf()
+	curFreqNode.Free()
 }
 
 func (c *Counter) add(item *itemNode) {
@@ -115,7 +117,15 @@ func (c *Counter) evict() {
 	}
 
 	c.freqHead = fnode.next
-	fnode.RemoveMySelf()
+	fnode.Free()
+}
+
+// Free frees the counter.
+func (c *Counter) Free() {
+	if c.freeCb != nil {
+		c.freeCb()
+	}
+	c.items = nil
 }
 
 type freqNode struct {
@@ -176,7 +186,7 @@ func (n *freqNode) InsertAfterMe(o *freqNode) {
 	o.prev = n
 }
 
-func (n *freqNode) RemoveMySelf() {
+func (n *freqNode) Free() {
 	if n.prev != nil {
 		n.prev.next = n.next
 	}
@@ -194,7 +204,7 @@ type itemNode struct {
 	prev, next *itemNode
 }
 
-func (n *itemNode) FreeMySelf() {
+func (n *itemNode) Free() {
 	fnode := n.freqNode
 	switch {
 	case fnode.itemHead == fnode.itemTail:

@@ -669,4 +669,5 @@ func (c *client) Stop() {
 	})
 	c.conn.Close()
 	<-c.done
+	c.keyCounter.Free()
 }
