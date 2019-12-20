@@ -74,6 +74,40 @@ type HotKey struct {
 	Counter *logrithmCounter
 }
 
+type sortedHotKeys struct {
+	capacity uint8
+	data     []HotKey
+}
+
+func newSortedHotKeys(capacity uint8) *sortedHotKeys {
+	return &sortedHotKeys{
+		capacity: capacity,
+		data:     make([]HotKey, 0, capacity),
+	}
+}
+
+func (s *sortedHotKeys) Insert(key HotKey) (success bool) {
+	l := len(s.data)
+	i := sort.Search(l, func(i int) bool {
+		return s.data[i].Counter.Value() <= key.Counter.Value()
+	})
+
+	if uint8(l) < s.capacity {
+		s.data = append(s.data, key)
+		success = true
+	}
+	if i < l {
+		copy(s.data[i+1:], s.data[i:])
+		s.data[i] = key
+		success = true
+	}
+	return
+}
+
+func (s *sortedHotKeys) Data() []HotKey {
+	return s.data
+}
+
 var (
 	defaultCollectInterval = time.Second * 10
 	defaultEvictInterval   = time.Minute
@@ -148,8 +182,7 @@ func (c *Collector) Run(stop <-chan struct{}) {
 	}
 }
 
-// AllocCounter allocates a hitter which is used to record the actual hits of visited
-// keys. The allocated counter is not goroutine-safe, every redis client should have its own.
+// AllocCounter allocates a general counter which is used to record the actual visits of keys.
 func (c *Collector) AllocCounter(name string) *Counter {
 	c.rwmu.Lock()
 	defer c.rwmu.Unlock()
@@ -176,16 +209,16 @@ func (c *Collector) HotKeys() []HotKey {
 }
 
 func (c *Collector) collect() {
-	// get all keys and acutal hit count in the current period.
+	// get all keys and acutal visits in the current period.
 	c.rwmu.RLock()
-	allHitKeys := make(map[string]uint64)
+	accessedKeyNames := make(map[string]uint64)
 	for _, counter := range c.counters {
 		for key, hitCount := range counter.Latch() {
-			allHitKeys[key] += hitCount
+			accessedKeyNames[key] += hitCount
 		}
 	}
 	c.rwmu.RUnlock()
-	if len(allHitKeys) == 0 {
+	if len(accessedKeyNames) == 0 {
 		return
 	}
 
@@ -200,14 +233,14 @@ func (c *Collector) collect() {
 	// generate the new hot keys.
 	res := newSortedHotKeys(c.capacity)
 	for keyName, counter := range curHotKeys {
-		hitCount := allHitKeys[keyName]
-		counter.ReaptIncr(hitCount)
+		visits := accessedKeyNames[keyName]
+		counter.ReaptIncr(visits)
 		key := HotKey{Name: keyName, Counter: counter}
 		res.Insert(key)
-		delete(allHitKeys, keyName)
+		delete(accessedKeyNames, keyName)
 	}
 
-	for keyName, hitCount := range allHitKeys {
+	for keyName, hitCount := range accessedKeyNames {
 		counter := new(logrithmCounter)
 		counter.ReaptIncr(hitCount)
 		key := HotKey{Name: keyName, Counter: counter}
@@ -218,40 +251,6 @@ func (c *Collector) collect() {
 	c.rwmu.Lock()
 	c.keys = res.Data()
 	c.rwmu.Unlock()
-}
-
-type sortedHotKeys struct {
-	capacity uint8
-	data     []HotKey
-}
-
-func newSortedHotKeys(capacity uint8) *sortedHotKeys {
-	return &sortedHotKeys{
-		capacity: capacity,
-		data:     make([]HotKey, 0, capacity),
-	}
-}
-
-func (s *sortedHotKeys) Insert(key HotKey) (success bool) {
-	l := len(s.data)
-	i := sort.Search(l, func(i int) bool {
-		return s.data[i].Counter.Value() <= key.Counter.Value()
-	})
-
-	if uint8(l) < s.capacity {
-		s.data = append(s.data, key)
-		success = true
-	}
-	if i < l {
-		copy(s.data[i+1:], s.data[i:])
-		s.data[i] = key
-		success = true
-	}
-	return
-}
-
-func (s *sortedHotKeys) Data() []HotKey {
-	return s.data
 }
 
 func (c *Collector) evictStale() {

@@ -4,7 +4,7 @@ import (
 	"sync"
 )
 
-// Counter is used to record the actual hit count of visited keys.
+// Counter is used to record the actual visits number of keys.
 // To minimize the memory footprint, only the keys that are frequently
 // accessed are recorded.
 //
@@ -25,8 +25,8 @@ func newCounter(capacity uint8, freeCb func()) *Counter {
 	}
 }
 
-// Hit hits the specified key.
-func (c *Counter) Hit(key string) {
+// Incr increases the specified key visits.
+func (c *Counter) Incr(key string) {
 	c.rwmu.Lock()
 	item, ok := c.items[key]
 	if ok {
@@ -46,7 +46,7 @@ func (c *Counter) Hit(key string) {
 	c.rwmu.Unlock()
 }
 
-// Latch returns the cached key hit counts and reset it.
+// Latch returns the cached key visits and reset it.
 func (c *Counter) Latch() map[string]uint64 {
 	c.rwmu.RLock()
 	res := make(map[string]uint64, len(c.items))

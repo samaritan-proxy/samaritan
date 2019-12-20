@@ -16,7 +16,7 @@ func (f *hotKeyFilter) Do(cmd string, req *simpleRequest) FilterStatus {
 	key := f.extractKey(cmd, req.Body())
 	// TODO: truncate key
 	if len(key) > 0 && f.counter != nil {
-		f.counter.Hit(key)
+		f.counter.Incr(key)
 	}
 	return Continue
 }

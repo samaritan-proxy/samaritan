@@ -16,7 +16,7 @@ func TestLogrithmCounter(t *testing.T) {
 		100000,
 		500000,
 	} {
-		t.Run(fmt.Sprintf("%d hits", i), func(t *testing.T) {
+		t.Run(fmt.Sprintf("%d visits", i), func(t *testing.T) {
 			c := new(logrithmCounter)
 			c.ReaptIncr(i)
 
@@ -38,9 +38,9 @@ func TestLogrithmCounter(t *testing.T) {
 	}
 }
 
-func repeatHit(c *Counter, key string, times int) {
+func accessKey(c *Counter, key string, times int) {
 	for i := 0; i < times; i++ {
-		c.Hit(key)
+		c.Incr(key)
 	}
 }
 
@@ -59,12 +59,12 @@ func TestCollectorCollectAndMerge(t *testing.T) {
 	}()
 
 	// k1:9901 k2:3000 k3:300 k4:50 k5:1
-	repeatHit(counter1, "k1", 1)
-	repeatHit(counter1, "k2", 3000)
-	repeatHit(counter2, "k1", 9900)
-	repeatHit(counter2, "k3", 300)
-	repeatHit(counter2, "k4", 50)
-	repeatHit(counter2, "k5", 1)
+	accessKey(counter1, "k1", 1)
+	accessKey(counter1, "k2", 3000)
+	accessKey(counter2, "k1", 9900)
+	accessKey(counter2, "k3", 300)
+	accessKey(counter2, "k4", 50)
+	accessKey(counter2, "k5", 1)
 
 	assertKeys := func(t *testing.T, c *Collector, expectedKeyNames []string) {
 		t.Helper()
@@ -79,7 +79,7 @@ func TestCollectorCollectAndMerge(t *testing.T) {
 	assertKeys(t, c, []string{"k1", "k2", "k3", "k4"})
 
 	// update k4 hit count
-	repeatHit(counter2, "k4", 100000)
+	accessKey(counter2, "k4", 100000)
 	time.Sleep(time.Millisecond * 150) // wait collect and merge
 	assertKeys(t, c, []string{"k4", "k1", "k2", "k3"})
 }
@@ -100,7 +100,7 @@ func TestCollectorEvictStale(t *testing.T) {
 	}
 	c := NewCollector(4, options...)
 	counter := c.AllocCounter("node1")
-	repeatHit(counter, "k1", 100)
+	accessKey(counter, "k1", 100)
 
 	stopCh := make(chan struct{})
 	go c.Run(stopCh)

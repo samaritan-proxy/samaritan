@@ -7,16 +7,16 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestCounterHit(t *testing.T) {
+func TestCounterIncr(t *testing.T) {
 	c := newCounter(3, nil)
 
-	c.Hit("key1")
-	c.Hit("key2")
-	c.Hit("key2")
-	c.Hit("key3")
+	c.Incr("key1")
+	c.Incr("key2")
+	c.Incr("key2")
+	c.Incr("key3")
 	// exceed capacity
 	for i := 0; i < 3; i++ {
-		c.Hit("key4")
+		c.Incr("key4")
 	}
 
 	res := c.Latch()
@@ -29,10 +29,10 @@ func TestCounterHit(t *testing.T) {
 func TestCounterLatch(t *testing.T) {
 	c := newCounter(3, nil)
 	for i := 1; i < 4; i++ {
-		c.Hit("key" + strconv.Itoa(i))
+		c.Incr("key" + strconv.Itoa(i))
 	}
 	c.Latch()
-	c.Hit("key5")
+	c.Incr("key5")
 	res := c.Latch()
 	assert.Len(t, res, 1)
 	assert.EqualValues(t, 1, res["key5"])
