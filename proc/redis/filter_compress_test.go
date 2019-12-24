@@ -89,24 +89,20 @@ func TestCompress(t *testing.T) {
 	assert.Equal(t, cpsData, dst[cpsHdrLen:])
 }
 
-func genCompressFilter(t *testing.T, enable bool, method redis.Compression_Method, threshold uint32) *CompressFilter {
-	f, err := defaultCpsFilterBuilder.Build(filterBuildParams{
-		Config: newConfig(&service.Config{
-			ProtocolOptions: &service.Config_RedisOption{
-				RedisOption: &protocol.RedisOption{
-					Compression: &redis.Compression{
-						Enable:    enable,
-						Method:    method,
-						Threshold: threshold,
-					},
+func genCompressFilter(t *testing.T, enable bool, method redis.Compression_Method, threshold uint32) *compressFilter {
+	cfg := newConfig(&service.Config{
+		ProtocolOptions: &service.Config_RedisOption{
+			RedisOption: &protocol.RedisOption{
+				Compression: &redis.Compression{
+					Enable:    enable,
+					Method:    method,
+					Threshold: threshold,
 				},
 			},
-		}),
+		},
 	})
-	assert.NoError(t, err)
-	filter, ok := f.(*CompressFilter)
-	assert.True(t, ok)
-	return filter
+	f := newCompressFilter(cfg)
+	return f.(*compressFilter)
 }
 
 func TestCompressResp(t *testing.T) {
@@ -189,8 +185,9 @@ func TestCompressResp(t *testing.T) {
 	filter := genCompressFilter(t, true, redis.Compression_MOCK, 4)
 	for idx, c := range cases {
 		t.Run(fmt.Sprintf("case %d", idx+1), func(t *testing.T) {
-			input := newStringArray(strings.Split(c.Input, " ")...)
-			filter.compress(getCommandFromResp(input), input)
+			parts := strings.Split(c.Input, " ")
+			input := newStringArray(parts...)
+			filter.compress(parts[0], input)
 			assert.EqualValues(t, c.Expect, input.String())
 		})
 	}
@@ -381,13 +378,13 @@ func TestCompressFilterDo(t *testing.T) {
 
 	t.Run("set", func(t *testing.T) {
 		req := newSimpleRequest(newStringArray("set", "A", "00000000000000000000"))
-		cpsFilter.Do(req)
+		cpsFilter.Do("set", req)
 		assert.Equal(t, genCompressedData(t, redis.Compression_MOCK, []byte{0, 0, 0, 1}), req.Body().Array[2].Text)
 	})
 
 	t.Run("get", func(t *testing.T) {
 		req := newSimpleRequest(newStringArray("get", "A"))
-		cpsFilter.Do(req)
+		cpsFilter.Do("get", req)
 		req.SetResponse(newStringArray(string(genCompressedData(t, redis.Compression_MOCK, []byte{0, 0, 0, 1}))))
 		req.Wait()
 		assert.Equal(t, make([]byte, 10), req.resp.Array[0].Text)
@@ -412,7 +409,7 @@ func TestCompressFilterDo(t *testing.T) {
 			t.Run(fmt.Sprintf("case %d", idx+1), func(t *testing.T) {
 				c()
 				req := newSimpleRequest(newStringArray("set", "A", "00000000000000000000"))
-				cpsFilter.Do(req)
+				cpsFilter.Do("set", req)
 				assert.True(t, req.Body().Equal(newStringArray("set", "A", "00000000000000000000")))
 			})
 

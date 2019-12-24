@@ -37,7 +37,7 @@ import (
 	"github.com/samaritan-proxy/samaritan/stats"
 )
 
-func newTestClient(t *testing.T, conn net.Conn, cfg *config) *client {
+func newTestClient(t *testing.T, conn net.Conn, cfg *config, options ...clientOption) *client {
 	t.Helper()
 
 	if cfg == nil {
@@ -45,7 +45,7 @@ func newTestClient(t *testing.T, conn net.Conn, cfg *config) *client {
 	}
 
 	logger := log.New("[test]")
-	c, err := newClient(conn, cfg, logger)
+	c, err := newClient(conn, cfg, logger, options...)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -114,7 +114,7 @@ func TestUpstreamClientWriteError(t *testing.T) {
 	}()
 	time.AfterFunc(time.Millisecond*100, func() {
 		tcpConn.CloseWrite()
-		c.Send(newSimpleRequest(newSimpleString("ping")))
+		c.Send(newSimpleRequest(newStringArray("ping")))
 	})
 	<-done
 }
@@ -151,7 +151,7 @@ loop:
 			break loop
 		default:
 		}
-		req := newSimpleRequest(newSimpleString("ping"))
+		req := newSimpleRequest(newStringArray("ping"))
 		c.Send(req)
 		reqs = append(reqs, req)
 	}
@@ -164,7 +164,12 @@ loop:
 
 func TestUpstreamClientHandleRedirection(t *testing.T) {
 	cconn, sconn := net.Pipe()
-	c := newTestClient(t, cconn, nil)
+	options := []clientOption{
+		withRedirectionCb(func(req *simpleRequest, v *RespValue) {
+			req.SetResponse(newBulkString("1"))
+		}),
+	}
+	c := newTestClient(t, cconn, nil, options...)
 	done := make(chan struct{})
 	go func() {
 		c.Start()
@@ -175,9 +180,6 @@ func TestUpstreamClientHandleRedirection(t *testing.T) {
 		<-done
 	}()
 
-	c.SetRedirectionCallback(func(req *simpleRequest, v *RespValue) {
-		req.SetResponse(newBulkString("1"))
-	})
 	t.Run("moved", func(t *testing.T) {
 		go func() {
 			sconn.Read(make([]byte, 8192))
@@ -209,7 +211,12 @@ func TestUpstreamClientHandleRedirection(t *testing.T) {
 
 func TestUpstreamClientHandleClusterDown(t *testing.T) {
 	cconn, sconn := net.Pipe()
-	c := newTestClient(t, cconn, nil)
+	options := []clientOption{
+		withClusterDownCb(func(req *simpleRequest, v *RespValue) {
+			req.SetResponse(newBulkString("1"))
+		}),
+	}
+	c := newTestClient(t, cconn, nil, options...)
 	done := make(chan struct{})
 	go func() {
 		c.Start()
@@ -220,9 +227,6 @@ func TestUpstreamClientHandleClusterDown(t *testing.T) {
 		<-done
 	}()
 
-	c.SetClusterDownCallback(func(req *simpleRequest, v *RespValue) {
-		req.SetResponse(newBulkString("1"))
-	})
 	go func() {
 		sconn.Read(make([]byte, 8192))
 		sconn.Write([]byte("-CLUSTERDOWN the cluster is down\r\n"))

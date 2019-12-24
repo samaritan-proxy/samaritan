@@ -45,15 +45,15 @@ func (mr *MockFilterMockRecorder) Destroy() *gomock.Call {
 }
 
 // Do mocks base method
-func (m *MockFilter) Do(arg0 *simpleRequest) FilterStatus {
+func (m *MockFilter) Do(arg0 string, arg1 *simpleRequest) FilterStatus {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Do", arg0)
+	ret := m.ctrl.Call(m, "Do", arg0, arg1)
 	ret0, _ := ret[0].(FilterStatus)
 	return ret0
 }
 
 // Do indicates an expected call of Do
-func (mr *MockFilterMockRecorder) Do(arg0 interface{}) *gomock.Call {
+func (mr *MockFilterMockRecorder) Do(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Do", reflect.TypeOf((*MockFilter)(nil).Do), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Do", reflect.TypeOf((*MockFilter)(nil).Do), arg0, arg1)
 }

@@ -24,18 +24,15 @@ import (
 func TestFilterChain_AppendFilter(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
+
 	filter1 := NewMockFilter(ctrl)
 	filter2 := NewMockFilter(ctrl)
-
 	chain := newRequestFilterChain()
 
-	assert.NoError(t, chain.AddFilter(filter1))
-	assert.EqualValues(t, filter1, chain.filtersList[0])
-
-	assert.NoError(t, chain.AddFilter(filter2))
-	assert.EqualValues(t, filter1, chain.filtersList[1])
-
-	assert.Equal(t, ErrFilterIsNull, chain.AddFilter(nil))
+	chain.AddFilter(filter1)
+	chain.AddFilter(filter2)
+	assert.EqualValues(t, filter1, chain.filters[0])
+	assert.EqualValues(t, filter2, chain.filters[1])
 }
 
 func TestFilterChain_Reset(t *testing.T) {
@@ -48,32 +45,50 @@ func TestFilterChain_Reset(t *testing.T) {
 		filter := NewMockFilter(ctrl)
 		filter.EXPECT().Destroy()
 		filters[idx] = filter
-		assert.NoError(t, chain.AddFilter(filter))
+		chain.AddFilter(filter)
 	}
 	chain.Reset()
-	assert.Equal(t, 0, len(chain.filtersList))
+	assert.Equal(t, 0, len(chain.filters))
 }
 
-func TestFilterChain_ParseRequest(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func TestFilterChain_Do(t *testing.T) {
+	req := newSimpleRequest(newStringArray("get", "a"))
 
-	chain := newRequestFilterChain()
+	t.Run("normal", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
 
-	names := make([]Filter, 5)
-	res := make([]Filter, 0)
-	for idx := range names {
-		filter := NewMockFilter(ctrl)
-		filter.EXPECT().Do(gomock.Any()).Return(Continue).Do(func(_ interface{}) {
-			res = append(res, filter)
-		})
-		names[idx] = filter
-		assert.NoError(t, chain.AddFilter(filter))
-	}
-	filter := NewMockFilter(ctrl)
-	filter.EXPECT().Do(gomock.Any()).Return(Stop)
-	assert.NoError(t, chain.AddFilter(filter))
-	assert.NoError(t, chain.AddFilter(NewMockFilter(ctrl)))
-	chain.Do(nil)
-	assert.Equal(t, names, res)
+		// two filters
+		filter1 := NewMockFilter(ctrl)
+		filter1.EXPECT().Do(gomock.Any(), gomock.Any()).Return(Continue)
+		filter2 := NewMockFilter(ctrl)
+		filter2.EXPECT().Do(gomock.Any(), gomock.Any()).Return(Continue)
+
+		// register filters
+		chain := newRequestFilterChain()
+		chain.AddFilter(filter1)
+		chain.AddFilter(filter2)
+
+		status := chain.Do(req)
+		assert.Equal(t, Continue, status)
+	})
+
+	t.Run("termination", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		// two filters
+		filter1 := NewMockFilter(ctrl)
+		filter1.EXPECT().Do(gomock.Any(), gomock.Any()).Return(Stop)
+		filter2 := NewMockFilter(ctrl)
+		filter2.EXPECT().Do(gomock.Any(), gomock.Any()).Return(Continue).Times(0)
+
+		// register filters
+		chain := newRequestFilterChain()
+		chain.AddFilter(filter1)
+		chain.AddFilter(filter2)
+
+		status := chain.Do(req)
+		assert.Equal(t, Stop, status)
+	})
 }

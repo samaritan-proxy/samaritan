@@ -14,31 +14,28 @@ func newHotKeyFilter(counter *hotkey.Counter) *hotKeyFilter {
 
 func (f *hotKeyFilter) Do(cmd string, req *simpleRequest) FilterStatus {
 	key := f.extractKey(cmd, req.Body())
-	// TODO: truncate key
 	if len(key) > 0 && f.counter != nil {
 		f.counter.Incr(key)
 	}
 	return Continue
 }
 
-func (f *hotKeyFilter) extractKey(command string, v *RespValue) string {
+func (f *hotKeyFilter) extractKey(cmd string, v *RespValue) string {
 	if len(v.Array) <= 1 {
 		return ""
 	}
 
-	switch command {
-	case "eval",
-		"cluster",
-		"auth",
-		"info",
-		"config",
-		"select":
+	switch cmd {
+	case "eval", "cluster", "auth", "info", "config", "select":
 		return ""
 	default:
+		// TODO: truncate key
 		return string(v.Array[1].Text)
 	}
 }
 
 func (f *hotKeyFilter) Destroy() {
-	// TODO: destroy counter
+	if f.counter != nil {
+		f.counter.Free()
+	}
 }
