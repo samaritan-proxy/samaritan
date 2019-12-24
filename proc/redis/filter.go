@@ -37,9 +37,9 @@ var (
 	ErrFilterNotExist = errors.New("filter not exist")
 )
 
-// Filter is a Filter of request
+// Filter is used to filter the request to backend.
 type Filter interface {
-	// NOTE: cmd is lowercase
+	// cmd is always lowercase.
 	Do(cmd string, req *simpleRequest) FilterStatus
 	Destroy()
 }
