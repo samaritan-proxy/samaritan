@@ -19,26 +19,16 @@ import (
 	"sync"
 	"time"
 
-	"github.com/samaritan-proxy/samaritan/pb/config/hc"
 	hostpkg "github.com/samaritan-proxy/samaritan/host"
-	"github.com/samaritan-proxy/samaritan/logger"
+	loggerpkg "github.com/samaritan-proxy/samaritan/logger"
+	"github.com/samaritan-proxy/samaritan/pb/config/hc"
 	"github.com/samaritan-proxy/samaritan/proc/internal/hc/tcp"
+	"github.com/samaritan-proxy/samaritan/proc/internal/log"
 )
 
 // MaximumConcurrency of hc is used to avoid unexpected large number of hosts resulting in huge number of goroutines.
 // Observed that number of hosts in prod env are almost all less than one thousand, we arbitrarily choose 2048 for MaximumConcurrency as the upperbound.
 const MaximumConcurrency = 2048
-
-// Monitor monitors the health state of hosts.
-type Monitor struct {
-	ctx                  context.Context
-	cancel               context.CancelFunc
-	done                 chan struct{}
-	config               *hc.HealthCheck
-	hcPolicyUpdateSignal chan struct{}
-	checker              checker
-	hostSet              *hostpkg.Set
-}
 
 var (
 	defaultInterval             = time.Second * 10
@@ -46,7 +36,7 @@ var (
 	defaultFallThreshold uint32 = 3
 	defaultRiseThreshold uint32 = 3
 	defaultChecker              = &hc.HealthCheck_TcpChecker{TcpChecker: &hc.TCPChecker{}}
-	defaultHCConfig             = &hc.HealthCheck{
+	defaultConfig               = &hc.HealthCheck{
 		Interval:      defaultInterval,
 		Timeout:       defaultTimeout,
 		FallThreshold: defaultFallThreshold,
@@ -55,16 +45,32 @@ var (
 	}
 )
 
-// NewMonitor creates a new monitor.
-func NewMonitor(config *hc.HealthCheck, hostSet *hostpkg.Set) (*Monitor, error) {
-	// TODO: do not return nil when config is nil
+// Monitor monitors the health state of hosts.
+type Monitor struct {
+	logger           log.Logger
+	ctx              context.Context
+	cancel           context.CancelFunc
+	done             chan struct{}
+	config           *hc.HealthCheck
+	strategyUpdateCh chan struct{}
+	checker          checker
+	hostSet          *hostpkg.Set
+}
+
+// NewMonitor creates a health monitor.
+func NewMonitor(config *hc.HealthCheck, hostSet *hostpkg.Set, logger log.Logger) (*Monitor, error) {
+	if logger == nil {
+		logger = loggerpkg.Get()
+	}
+
+	// TODO: don't return nil when config is empty
 	if config == nil {
-		logger.Infof("health check config is null, healthy check will disable")
+		logger.Infof("health check config is null, healthy check will be disabled")
 		return nil, nil
 	}
 	if err := config.Validate(); err != nil {
-		logger.Infof("failed to create monitor, config validate error: [%v], use default config", err)
-		config = defaultHCConfig
+		logger.Infof("invalid health check config: %v, will use default", err)
+		config = defaultConfig
 	}
 
 	checker, err := newChecker(config)
@@ -73,13 +79,14 @@ func NewMonitor(config *hc.HealthCheck, hostSet *hostpkg.Set) (*Monitor, error) 
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	m := &Monitor{
-		ctx:                  ctx,
-		cancel:               cancel,
-		done:                 make(chan struct{}),
-		config:               config,
-		hcPolicyUpdateSignal: make(chan struct{}, 1),
-		checker:              checker,
-		hostSet:              hostSet,
+		logger:           logger,
+		ctx:              ctx,
+		cancel:           cancel,
+		done:             make(chan struct{}),
+		config:           config,
+		strategyUpdateCh: make(chan struct{}, 1),
+		checker:          checker,
+		hostSet:          hostSet,
 	}
 	return m, nil
 }
@@ -101,7 +108,7 @@ func (m *Monitor) ResetHealthCheck(config *hc.HealthCheck) error {
 		m.checker = checker
 	}
 	m.config = config
-	m.hcPolicyUpdateSignal <- struct{}{}
+	m.strategyUpdateCh <- struct{}{}
 	return nil
 }
 
@@ -122,7 +129,7 @@ func (m *Monitor) loop() {
 		case <-m.ctx.Done():
 			ticker.Stop()
 			return
-		case <-m.hcPolicyUpdateSignal:
+		case <-m.strategyUpdateCh:
 			ticker.Stop()
 			ticker = time.NewTicker(m.config.Interval)
 		case <-ticker.C:
@@ -135,14 +142,14 @@ func (m *Monitor) checkHostAndUpdateStatus(host *hostpkg.Host) {
 	if m.checkHost(host) {
 		if host.IncSuccessfulCount() > uint64(m.config.RiseThreshold) {
 			if m.hostSet.MarkHostHealthy(host) {
-				logger.Infof("Host %s is healthy", host)
+				m.logger.Infof("Host %s is healthy", host)
 			}
 		}
 		return
 	}
 	if host.IncFailedCount() > uint64(m.config.FallThreshold) {
 		if m.hostSet.MarkHostUnhealthy(host) {
-			logger.Warnf("Host %s is unhealthy", host)
+			m.logger.Warnf("Host %s is unhealthy", host)
 		}
 	}
 }
@@ -176,7 +183,7 @@ func (m *Monitor) checkHosts() {
 
 func (m *Monitor) checkHost(host *hostpkg.Host) bool {
 	if err := m.checker.Check(host.Addr, m.config.Timeout); err != nil {
-		logger.Debugf("Check host[%s] state failed: %s", host, err)
+		m.logger.Debugf("Check host[%s] state failed: %s", host, err)
 		return false
 	}
 	return true

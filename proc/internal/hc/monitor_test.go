@@ -22,9 +22,9 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/samaritan-proxy/samaritan/pb/config/hc"
 	"github.com/samaritan-proxy/samaritan/host"
 	"github.com/samaritan-proxy/samaritan/logger"
+	"github.com/samaritan-proxy/samaritan/pb/config/hc"
 )
 
 func TestNewMonitor(t *testing.T) {
@@ -119,7 +119,7 @@ func TestNewMonitor(t *testing.T) {
 	}
 	for i, c := range cases {
 		t.Run(fmt.Sprintf("case:%d", i+1), func(t *testing.T) {
-			m, err := NewMonitor(c.Config, c.HS)
+			m, err := NewMonitor(c.Config, c.HS, nil)
 			assert.NoError(t, err)
 			if c.Config == nil {
 				assert.Nil(t, m)
@@ -128,7 +128,7 @@ func TestNewMonitor(t *testing.T) {
 			if c.NotUseDefaultCfg {
 				assert.Equal(t, c.Config, m.config)
 			} else {
-				assert.Equal(t, defaultHCConfig, m.config)
+				assert.Equal(t, defaultConfig, m.config)
 			}
 		})
 	}
@@ -150,7 +150,7 @@ func TestResetHealthCheckPolicy(t *testing.T) {
 			TcpChecker: &hc.TCPChecker{},
 		},
 	}
-	m, err := NewMonitor(config, hostSet)
+	m, err := NewMonitor(config, hostSet, nil)
 	assert.NoError(t, err)
 	m.Start()
 	defer m.Stop()
@@ -204,7 +204,7 @@ func TestCheckHosts(t *testing.T) {
 	hostSet.MarkHostUnhealthy(host2)
 
 	hcPolicy := genConfigForTest()
-	m, err := NewMonitor(hcPolicy, hostSet)
+	m, err := NewMonitor(hcPolicy, hostSet, nil)
 	assert.NoError(t, err)
 	m.Start()
 	defer m.Stop()
@@ -226,7 +226,7 @@ func TestCheckHostsAllUnreachable(t *testing.T) {
 	hostSet := genAllUnreachableHosts(numOfHosts)
 	hcPolicy := genConfigForTest()
 
-	m, err := NewMonitor(hcPolicy, hostSet)
+	m, err := NewMonitor(hcPolicy, hostSet, nil)
 	assert.NoError(t, err)
 	m.Start()
 	defer m.Stop()
@@ -238,7 +238,7 @@ func TestCheckHostsAllUnreachable(t *testing.T) {
 
 func BenchmarkCheckHostsConsecutively(b *testing.B) {
 	hostSet := genPartiallyAvailableHosts(500)
-	m, err := NewMonitor(genConfigForTest(), hostSet)
+	m, err := NewMonitor(genConfigForTest(), hostSet, nil)
 	assert.NoError(b, err)
 
 	b.ResetTimer()
@@ -249,7 +249,7 @@ func BenchmarkCheckHostsConsecutively(b *testing.B) {
 
 func BenchmarkCheckHostsConcurrently(b *testing.B) {
 	hostSet := genPartiallyAvailableHosts(500)
-	m, err := NewMonitor(genConfigForTest(), hostSet)
+	m, err := NewMonitor(genConfigForTest(), hostSet, nil)
 	assert.NoError(b, err)
 
 	b.ResetTimer()
@@ -261,7 +261,7 @@ func BenchmarkCheckHostsConcurrently(b *testing.B) {
 func BenchmarkCheckAllUnreachableHostsConsecutively(b *testing.B) {
 	hostSet := genAllUnreachableHosts(1000)
 	hcPolicy := genConfigForTest()
-	m, err := NewMonitor(hcPolicy, hostSet)
+	m, err := NewMonitor(hcPolicy, hostSet, nil)
 	assert.NoError(b, err)
 
 	b.ResetTimer()
@@ -273,7 +273,7 @@ func BenchmarkCheckAllUnreachableHostsConsecutively(b *testing.B) {
 func BenchmarkCheckAllUnreachableHostsConcurrently(b *testing.B) {
 	hostSet := genAllUnreachableHosts(1000)
 	hcPolicy := genConfigForTest()
-	m, err := NewMonitor(hcPolicy, hostSet)
+	m, err := NewMonitor(hcPolicy, hostSet, nil)
 	assert.NoError(b, err)
 
 	b.ResetTimer()
