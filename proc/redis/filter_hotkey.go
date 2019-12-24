@@ -1,6 +1,8 @@
 package redis
 
-import "github.com/samaritan-proxy/samaritan/proc/redis/hotkey"
+import (
+	"github.com/samaritan-proxy/samaritan/proc/redis/hotkey"
+)
 
 type hotKeyFilter struct {
 	counter *hotkey.Counter
@@ -26,7 +28,7 @@ func (f *hotKeyFilter) extractKey(cmd string, v *RespValue) string {
 	}
 
 	switch cmd {
-	case "eval", "cluster", "auth", "info", "config", "select":
+	case "eval", "cluster", "auth":
 		return ""
 	default:
 		// TODO: truncate key

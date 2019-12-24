@@ -3093,3 +3093,8 @@ func TestScan(t *testing.T) {
 	}
 	assert.ElementsMatch(t, keys, scannedKeys)
 }
+
+func TestHotKey(t *testing.T) {
+	_, err := c.Exec("hotkey")
+	assert.NoError(t, err)
+}

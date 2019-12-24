@@ -17,7 +17,9 @@ type Counter struct {
 	freqHead *freqNode
 }
 
-func newCounter(capacity uint8, freeCb func()) *Counter {
+// NewCounter creates a counter with given parameters.
+// NOTE: It's only for test, don't rely on it directly.
+func NewCounter(capacity uint8, freeCb func()) *Counter {
 	return &Counter{
 		capacity: capacity,
 		freeCb:   freeCb,

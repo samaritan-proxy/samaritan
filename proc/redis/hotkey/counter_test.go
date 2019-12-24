@@ -8,7 +8,7 @@ import (
 )
 
 func TestCounterIncr(t *testing.T) {
-	c := newCounter(3, nil)
+	c := NewCounter(3, nil)
 
 	c.Incr("key1")
 	c.Incr("key2")
@@ -27,7 +27,7 @@ func TestCounterIncr(t *testing.T) {
 }
 
 func TestCounterLatch(t *testing.T) {
-	c := newCounter(3, nil)
+	c := NewCounter(3, nil)
 	for i := 1; i < 4; i++ {
 		c.Incr("key" + strconv.Itoa(i))
 	}
@@ -41,7 +41,7 @@ func TestCounterLatch(t *testing.T) {
 func TestCounterFree(t *testing.T) {
 	var called bool
 	freeCb := func() { called = true }
-	c := newCounter(3, freeCb)
+	c := NewCounter(3, freeCb)
 	c.Free()
 	assert.True(t, called)
 }

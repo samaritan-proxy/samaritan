@@ -236,18 +236,17 @@ func handleScan(u *upstream, req *rawRequest) {
 
 func handleHotKey(u *upstream, req *rawRequest) {
 	var summary bytes.Buffer
-
 	keys := u.HotKeys()
-	summary.WriteString(fmt.Sprintf(
-		"Collect %d keys in this period!", len(keys),
-	))
+	summary.WriteString(fmt.Sprintf("Collect %d keys in this period!", len(keys)))
 	for _, key := range keys {
 		summary.WriteString(fmt.Sprintf(
 			"\ncounter: %d  keyname: %s",
-			key.Counter.Value(),
-			key.Name,
+			key.Counter.Value(), key.Name,
 		))
 	}
-
-	req.SetResponse(newSimpleBytes(summary.Bytes()))
+	// The bulk string reply will be escaped in redis-cli, like:
+	// "Collect 1 keys in this period!\ncounter: 8  keyname: mfukey"
+	// The output format is not friendly to human, but there is no good way
+	// for the time being.
+	req.SetResponse(newBulkBytes(summary.Bytes()))
 }

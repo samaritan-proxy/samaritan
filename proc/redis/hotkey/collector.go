@@ -196,7 +196,7 @@ func (c *Collector) AllocCounter(name string) *Counter {
 		delete(c.counters, name)
 		c.rwmu.Unlock()
 	}
-	counter = newCounter(c.capacity, cb)
+	counter = NewCounter(c.capacity, cb)
 	c.counters[name] = counter
 	return counter
 }
