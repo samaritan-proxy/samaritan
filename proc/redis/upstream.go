@@ -124,8 +124,8 @@ func (u *upstream) HotKeys() []hotkey.HotKey {
 	return u.hkc.HotKeys()
 }
 
-func (u *upstream) MakeRequest(key []byte, req *simpleRequest) {
-	addr, err := u.chooseHost(key)
+func (u *upstream) MakeRequest(routingKey []byte, req *simpleRequest) {
+	addr, err := u.pickHost(routingKey, req)
 	if err != nil {
 		req.SetResponse(newError(err.Error()))
 		return
@@ -133,8 +133,8 @@ func (u *upstream) MakeRequest(key []byte, req *simpleRequest) {
 	u.MakeRequestToHost(addr, req)
 }
 
-func (u *upstream) chooseHost(key []byte) (string, error) {
-	hash := crc16(hashtag(key))
+func (u *upstream) pickHost(routingKey []byte, req *simpleRequest) (string, error) {
+	hash := crc16(hashtag(routingKey))
 	rhost := u.slots[hash&(slotNum-1)]
 	if rhost != nil {
 		return rhost.Addr, nil

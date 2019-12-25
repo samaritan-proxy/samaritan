@@ -56,9 +56,34 @@ var (
 		// geo
 		"geoadd", "geodist", "geohash", "geopos", "georadius", "georadiusbymember",
 	}
-
 	sumResultCommands = []string{"del", "exists", "touch", "unlink"}
+
+	// commands will never modify keys
+	readOnlyCommands map[string]struct{}
 )
+
+func init() {
+	// init read-only commands map
+	for _, command := range []string{
+		"dump", "pttl", "sort", "ttl", "type", "exists",
+		// string & list & geo
+		"bitcount", "bitpos", "get", "getbit", "getrange", "strlen",
+		"lindex", "llen", "lrange", "geoadd",
+		// hash
+		"hexists", "hget", "hgetall", "hkeys", "hlen", "hmget",
+		"hstrlen", "hvals", "hscan",
+		// set
+		"scard", "sdiff", "sinter", "sismember", "smembers",
+		"srandmember", "sunion", "sscan",
+		// zset
+		"zcard", "zcount", "zlexcount",
+		"zrange", "zrangebylex", "zrangebyscore", "zrank",
+		"zrevrange", "zrevrangebylex", "zrevrangebyscore", "zrevrank",
+		"zscore", "zscan", "pfcount",
+	} {
+		readOnlyCommands[command] = struct{}{}
+	}
+}
 
 type commandStats struct {
 	Total         *stats.Counter
