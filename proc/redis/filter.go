@@ -17,9 +17,8 @@ package redis
 //go:generate mockgen -package $GOPACKAGE -self_package $REPO_URI/proc/$GOPACKAGE -destination filter_mock_test.go $REPO_URI/proc/$GOPACKAGE Filter
 
 import (
+	"bytes"
 	"errors"
-
-	"github.com/samaritan-proxy/samaritan/stats"
 )
 
 // FilterStatus type
@@ -38,59 +37,43 @@ var (
 	ErrFilterNotExist = errors.New("filter not exist")
 )
 
-// Filter is a Filter of request
+// Filter is used to filter the request to backend.
 type Filter interface {
-	Do(req *simpleRequest) FilterStatus
+	// cmd is always lowercase.
+	Do(cmd string, req *simpleRequest) FilterStatus
 	Destroy()
-}
-
-// filterBuilder creates a Filter
-type filterBuilder interface {
-	Build(filterBuildParams) (Filter, error)
-}
-
-// filterBuildParams wraps all the parameters required by the builder
-type filterBuildParams struct {
-	Config *config
-	Scope  *stats.Scope
 }
 
 // FilterChain is a set of filters
 type FilterChain struct {
-	filtersList []Filter
+	filters []Filter
 }
 
 // newRequestFilterChain return a new FilterChain
 func newRequestFilterChain() *FilterChain {
 	return &FilterChain{
-		filtersList: make([]Filter, 0),
+		filters: make([]Filter, 0, 4),
 	}
 }
 
-// AddFilter add a Filter
-func (c *FilterChain) AddFilter(f Filter) error {
-	if f == nil {
-		return ErrFilterIsNull
-	}
-	c.filtersList = append(c.filtersList, f)
-	return nil
+// AddFilter adds a filter
+func (c *FilterChain) AddFilter(f Filter) {
+	c.filters = append(c.filters, f)
 }
 
 // Reset clean and destroy all filters
 func (c *FilterChain) Reset() {
-	for _, f := range c.filtersList {
+	for _, f := range c.filters {
 		f.Destroy()
 	}
-	c.filtersList = make([]Filter, 0)
+	c.filters = make([]Filter, 0)
 }
 
 // Do call all filters in FilterChain
 func (c *FilterChain) Do(r *simpleRequest) FilterStatus {
-	if c == nil {
-		return Continue
-	}
-	for _, f := range c.filtersList {
-		if f.Do(r) == Stop {
+	cmd := string(bytes.ToLower(r.Body().Array[0].Text))
+	for _, f := range c.filters {
+		if f.Do(cmd, r) == Stop {
 			return Stop
 		}
 	}

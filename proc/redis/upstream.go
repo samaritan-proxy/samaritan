@@ -29,6 +29,7 @@ import (
 	"github.com/samaritan-proxy/samaritan/proc/internal/log"
 	netutil "github.com/samaritan-proxy/samaritan/proc/internal/net"
 	"github.com/samaritan-proxy/samaritan/proc/internal/syscall"
+	"github.com/samaritan-proxy/samaritan/proc/redis/hotkey"
 )
 
 const (
@@ -54,9 +55,10 @@ type createClientCall struct {
 
 type upstream struct {
 	cfg    *config
+	hosts  *host.Set
 	logger log.Logger
 	stats  *proc.UpstreamStats
-	hosts  *host.Set
+	hkc    *hotkey.Collector
 
 	clients           atomic.Value // map[string]*client
 	clientsMu         sync.Mutex
@@ -74,9 +76,10 @@ type upstream struct {
 func newUpstream(cfg *config, hosts []*host.Host, logger log.Logger, stats *proc.UpstreamStats) *upstream {
 	u := &upstream{
 		cfg:            cfg,
+		hosts:          host.NewSet(hosts...),
 		logger:         logger,
 		stats:          stats,
-		hosts:          host.NewSet(hosts...),
+		hkc:            hotkey.NewCollector(50),
 		slotsRefreshCh: make(chan struct{}, 1),
 		quit:           make(chan struct{}),
 		done:           make(chan struct{}),
@@ -86,12 +89,17 @@ func newUpstream(cfg *config, hosts []*host.Host, logger log.Logger, stats *proc
 }
 
 func (u *upstream) Serve() {
-	slotsLoopDone := make(chan struct{})
+	var wg sync.WaitGroup
+	wg.Add(2)
 	go func() {
+		defer wg.Done()
 		u.loopRefreshSlots()
-		close(slotsLoopDone)
 	}()
-	<-slotsLoopDone
+	go func() {
+		defer wg.Done()
+		u.hkc.Run(u.quit)
+	}()
+	wg.Wait()
 
 	// stop all clients
 	u.clientsMu.Lock()
@@ -110,6 +118,10 @@ func (u *upstream) Stop() {
 
 func (u *upstream) Hosts() []*host.Host {
 	return u.hosts.Healthy()
+}
+
+func (u *upstream) HotKeys() []hotkey.HotKey {
+	return u.hkc.HotKeys()
 }
 
 func (u *upstream) MakeRequest(key []byte, req *simpleRequest) {
@@ -191,23 +203,29 @@ func (u *upstream) createClient(addr string) (*client, error) {
 
 	select {
 	case <-u.quit:
-		return nil, errors.New(backendExited)
+		return nil, errors.New(upstreamExited)
 	default:
 	}
 	c, ok := u.loadClients()[addr]
 	if ok {
 		return c, nil
 	}
+
 	conn, err := netutil.Dial("tcp", addr, *u.cfg.ConnectTimeout)
 	if err != nil {
 		return nil, err
 	}
-	c, err = newClient(conn, u.cfg, u.logger)
+	options := []clientOption{
+		withKeyCounter(u.hkc.AllocCounter(addr)),
+		withRedirectionCb(u.handleRedirection),
+		withClusterDownCb(u.handleClusterDown),
+	}
+	c, err = newClient(conn, u.cfg, u.logger, options...)
 	if err != nil {
 		return nil, err
 	}
-	c.SetRedirectionCallback(u.handleRedirection)
-	c.SetClusterDownCallback(u.handleClusterDown)
+
+	// start client
 	go func() {
 		c.Start()
 		u.removeClient(addr)
@@ -435,6 +453,26 @@ func (u *upstream) OnHostReplace(hosts []*host.Host) error {
 	return nil
 }
 
+type clientOption func(c *client)
+
+func withKeyCounter(counter *hotkey.Counter) clientOption {
+	return func(c *client) {
+		c.keyCounter = counter
+	}
+}
+
+func withRedirectionCb(cb func(req *simpleRequest, resp *RespValue)) clientOption {
+	return func(c *client) {
+		c.onRedirection = cb
+	}
+}
+
+func withClusterDownCb(cb func(req *simpleRequest, resp *RespValue)) clientOption {
+	return func(c *client) {
+		c.onClusterDown = cb
+	}
+}
+
 type client struct {
 	cfg    *config
 	logger log.Logger
@@ -444,8 +482,8 @@ type client struct {
 
 	pendingReqs    chan *simpleRequest
 	processingReqs chan *simpleRequest
-
-	filter *FilterChain
+	keyCounter     *hotkey.Counter
+	filter         *FilterChain
 
 	onRedirection func(req *simpleRequest, resp *RespValue)
 	onClusterDown func(req *simpleRequest, resp *RespValue)
@@ -455,25 +493,15 @@ type client struct {
 	done     chan struct{}
 }
 
-func buildFilterChan(svcCfg *config, logger log.Logger) (*FilterChain, error) {
-	chain := newRequestFilterChain()
-	p := filterBuildParams{
-		Config: svcCfg,
-		// TODO: set stats
-	}
-	cpsFilter, err := defaultCpsFilterBuilder.Build(p)
-	if err != nil {
-		return nil, err
-	}
-	if err := chain.AddFilter(cpsFilter); err != nil {
-		return nil, err
-	}
-	return chain, nil
-}
-
-func newClient(conn net.Conn, cfg *config, logger log.Logger) (*client, error) {
-	filter, err := buildFilterChan(cfg, logger)
-	if err != nil {
+func newClient(conn net.Conn, cfg *config, logger log.Logger, options ...clientOption) (*client, error) {
+	// UserTimeout is used to make the client fail fast when the remote peer
+	// of eastablised connection crashes without sending FIN packet. It only works
+	// on linux platform currently, the underlying mechanism is use TCP_USER_TIMEOUT
+	// option to limit the tcp packet retransmission time.
+	//
+	// 10 seconds is enough in most scenarios, maybe it could be configured in the future.
+	userTimeout := time.Second * 10
+	if err := syscall.SetTCPUserTimeout(conn, userTimeout); err != nil {
 		return nil, err
 	}
 
@@ -485,30 +513,33 @@ func newClient(conn net.Conn, cfg *config, logger log.Logger) (*client, error) {
 		dec:            newDecoder(conn, 8192),
 		pendingReqs:    make(chan *simpleRequest, 1024),
 		processingReqs: make(chan *simpleRequest, 1024),
-		filter:         filter,
 		quit:           make(chan struct{}),
 		done:           make(chan struct{}),
 	}
 
-	// UserTimeout is used to make the client fail fast when the remote peer
-	// of eastablised connection crashes without sending FIN packet. It only works
-	// on linux platform currently, the underlying mechanism is use TCP_USER_TIMEOUT
-	// option to limit the tcp packet retransmission time.
-	//
-	// 10 seconds is enough in most scenarios, maybe it could be configured in the future.
-	userTimeout := time.Second * 10
-	if err := syscall.SetTCPUserTimeout(c.conn, userTimeout); err != nil {
+	// set provided options
+	for _, option := range options {
+		option(c)
+	}
+
+	if err := c.initFilters(); err != nil {
 		return nil, err
 	}
 	return c, nil
 }
 
-func (c *client) SetRedirectionCallback(cb func(*simpleRequest, *RespValue)) {
-	c.onRedirection = cb
-}
+func (c *client) initFilters() error {
+	filters := []Filter{
+		newHotKeyFilter(c.keyCounter),
+		newCompressFilter(c.cfg),
+	}
 
-func (c *client) SetClusterDownCallback(cb func(*simpleRequest, *RespValue)) {
-	c.onClusterDown = cb
+	chain := newRequestFilterChain()
+	for _, filter := range filters {
+		chain.AddFilter(filter)
+	}
+	c.filter = chain
+	return nil
 }
 
 func (c *client) Start() {
@@ -638,4 +669,5 @@ func (c *client) Stop() {
 	})
 	c.conn.Close()
 	<-c.done
+	c.filter.Reset()
 }

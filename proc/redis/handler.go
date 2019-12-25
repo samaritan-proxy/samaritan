@@ -233,3 +233,22 @@ func handleScan(u *upstream, req *rawRequest) {
 	host := hosts[nodeIdx]
 	u.MakeRequestToHost(host.Addr, simpleReq)
 }
+
+func handleHotKey(u *upstream, req *rawRequest) {
+	var summary bytes.Buffer
+	keys := u.HotKeys()
+	summary.WriteString(fmt.Sprintf("Collect %d keys in this period!", len(keys)))
+	for _, key := range keys {
+		summary.WriteString(fmt.Sprintf(
+			"\ncounter: %d  keyname: %s",
+			key.Counter.Value(), key.Name,
+		))
+	}
+	// The bulk string reply will be escaped in redis-cli, like:
+	// "Collect 1 keys in this period!\ncounter: 8  keyname: mfukey"
+	// The output format is not friendly to human, but there is no good way
+	// for the time being. Fortunately, RESP3 adds the 'Verbatim string' type
+	// which can be used to show the raw string, more details see:
+	// https://github.com/antirez/RESP3/blob/master/spec.md#simple-types
+	req.SetResponse(newBulkBytes(summary.Bytes()))
+}
