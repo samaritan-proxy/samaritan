@@ -41,6 +41,11 @@ sequenceDiagram
 - Redis <= 5.0
 
 ## Commands
+
+### Customized
+
+* `HOTKEY`: return the hot keys collected by proxy.
+
 ### Modified
 
 * `MGET`: split to multiple `GET`.
