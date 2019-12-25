@@ -21,9 +21,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/samaritan-proxy/samaritan/host"
 	"github.com/samaritan-proxy/samaritan/pb/config/protocol"
 	"github.com/samaritan-proxy/samaritan/pb/config/service"
-	"github.com/samaritan-proxy/samaritan/host"
 	"github.com/samaritan-proxy/samaritan/proc"
 	"github.com/samaritan-proxy/samaritan/proc/internal/hc"
 	"github.com/samaritan-proxy/samaritan/proc/internal/lb"
@@ -72,7 +72,7 @@ func newProc(name string, cfg *service.Config, hosts []*host.Host, stats *proc.S
 		return nil, err
 	}
 
-	p.hm, err = hc.NewMonitor(cfg.HealthCheck, p.hostSet)
+	p.hm, err = hc.NewMonitor(cfg.HealthCheck, p.hostSet, logger)
 	if err != nil {
 		return nil, err
 	}
@@ -265,11 +265,11 @@ func (p *tcpProc) OnSvcAllHostReplace(hosts []*host.Host) error {
 }
 
 func (p *tcpProc) OnSvcConfigUpdate(c *service.Config) error {
-	// update healthy check
+	// update if strategy changes.
 	if newHC := c.GetHealthCheck(); !p.cfg.GetHealthCheck().Equal(newHC) {
 		var err error
 		if p.hm == nil {
-			p.hm, err = hc.NewMonitor(newHC, p.hostSet)
+			p.hm, err = hc.NewMonitor(newHC, p.hostSet, p.Logger)
 			if err == nil {
 				p.hm.Start()
 			}
