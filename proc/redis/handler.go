@@ -247,6 +247,8 @@ func handleHotKey(u *upstream, req *rawRequest) {
 	// The bulk string reply will be escaped in redis-cli, like:
 	// "Collect 1 keys in this period!\ncounter: 8  keyname: mfukey"
 	// The output format is not friendly to human, but there is no good way
-	// for the time being.
+	// for the time being. Fortunately, RESP3 adds the 'Verbatim string' type
+	// which can be used to show the raw string, more details see:
+	// https://github.com/antirez/RESP3/blob/master/spec.md#simple-types
 	req.SetResponse(newBulkBytes(summary.Bytes()))
 }
