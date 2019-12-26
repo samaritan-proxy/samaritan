@@ -507,7 +507,7 @@ func TestUpstreamRefreshSlots(t *testing.T) {
 		<-done
 	}()
 
-	time.Sleep(time.Millisecond * 500)
+	time.Sleep(time.Millisecond * 100)
 	assert.NotEmpty(t, u.slotsLastUpdateTime)
 	for i := 0; i < slotNum; i++ {
 		assert.NotNil(t, u.slots[i])
