@@ -33,8 +33,8 @@ option (gogoproto.unmarshaler_all) = true;
 enum ReadStrategy {
   // Read from master nodes.
   MASTER = 0;
-  // Read from slave nodes.
-  SLAVE = 1;
+  // Read from replica nodes.
+  REPLICA = 1;
   // Read from all nodes.
   BOTH = 2;
 }
