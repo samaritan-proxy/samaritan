@@ -49,6 +49,8 @@ func newTestClient(t *testing.T, conn net.Conn, cfg *config, options ...clientOp
 	if err != nil {
 		t.Fatal(err)
 	}
+	// drain the initial auth and readonly requests.
+	c.drainRequests()
 	return c
 }
 
@@ -435,16 +437,14 @@ func randStr(n int) string {
 	return s[:n]
 }
 
-func newTestListener(t *testing.T, handler func(lnAddr string, conn net.Conn)) (addr string, shutdown func()) {
+func newTestRedisInstance(t *testing.T, handler func(conn net.Conn)) (addr string, shutdown func()) {
 	t.Helper()
 
 	l, err := net.Listen("tcp", "127.0.0.1:0")
 	assert.NoError(t, err)
 
 	addr = l.Addr().String()
-	shutdown = func() {
-		l.Close()
-	}
+	shutdown = func() { l.Close() }
 	if handler == nil {
 		return
 	}
@@ -460,9 +460,8 @@ func newTestListener(t *testing.T, handler func(lnAddr string, conn net.Conn)) (
 		}
 
 		defer conn.Close()
-		if handler != nil {
-			handler(addr, conn)
-		}
+		drainReadOnlyRequest(conn)
+		handler(conn)
 	}()
 
 	shutdown = func() {
@@ -473,8 +472,14 @@ func newTestListener(t *testing.T, handler func(lnAddr string, conn net.Conn)) (
 	return
 }
 
+func drainReadOnlyRequest(conn net.Conn) {
+	l := len(encode(newStringArray("readonly")))
+	conn.Read(make([]byte, l))
+	conn.Write([]byte("+OK\r\n"))
+}
+
 func TestUpstreamRefreshSlots(t *testing.T) {
-	addr, shutdown := newTestListener(t, func(lnAddr string, conn net.Conn) {
+	addr, shutdown := newTestRedisInstance(t, func(conn net.Conn) {
 		b := make([]byte, 1024)
 		n, _ := conn.Read(b)
 		// assert request
@@ -486,7 +491,7 @@ func TestUpstreamRefreshSlots(t *testing.T) {
 			conn.Close()
 			return
 		}
-		data := fmt.Sprintf("%s %s master - 0 1528688887753 7 connected 0-16383\n", randStr(40), lnAddr)
+		data := fmt.Sprintf("%s %s master - 0 1528688887753 7 connected 0-16383\n", randStr(40), conn.LocalAddr().String())
 		conn.Write(encode(newBulkString(data)))
 	})
 	defer shutdown()
@@ -502,7 +507,7 @@ func TestUpstreamRefreshSlots(t *testing.T) {
 		<-done
 	}()
 
-	time.Sleep(time.Millisecond * 100)
+	time.Sleep(time.Millisecond * 500)
 	assert.NotEmpty(t, u.slotsLastUpdateTime)
 	for i := 0; i < slotNum; i++ {
 		assert.NotNil(t, u.slots[i])
@@ -510,13 +515,14 @@ func TestUpstreamRefreshSlots(t *testing.T) {
 }
 
 func TestUpstreamSlotsRefreshRetryOnFail(t *testing.T) {
-	addr, shutdown := newTestListener(t, func(lnAddr string, conn net.Conn) {
+	addr, shutdown := newTestRedisInstance(t, func(conn net.Conn) {
+		// drainReadOnlyRequest(conn)
 		// fail at first time
 		conn.Read(make([]byte, 1024))
 		conn.Write(encode(newError("internal error")))
 		// success at second time
 		conn.Read(make([]byte, 1024))
-		data := fmt.Sprintf("%s %s master - 0 1528688887753 7 connected 0-16383\n", randStr(40), lnAddr)
+		data := fmt.Sprintf("%s %s master - 0 1528688887753 7 connected 0-16383\n", randStr(40), conn.LocalAddr().String())
 		conn.Write(encode(newBulkString(data)))
 	})
 	defer shutdown()
@@ -541,9 +547,10 @@ func TestUpstreamSlotsRefreshRetryOnFail(t *testing.T) {
 }
 
 func TestUpstreamSlotsRefreshOnExecessiveRequests(t *testing.T) {
-	addr, shutdown := newTestListener(t, func(lnAddr string, conn net.Conn) {
+	addr, shutdown := newTestRedisInstance(t, func(conn net.Conn) {
+		// drainReadOnlyRequest(conn)
 		conn.Read(make([]byte, 1024))
-		data := fmt.Sprintf("%s %s master - 0 1528688887753 7 connected 0-16383\n", randStr(40), lnAddr)
+		data := fmt.Sprintf("%s %s master - 0 1528688887753 7 connected 0-16383\n", randStr(40), conn.LocalAddr().String())
 		conn.Write(encode(newBulkString(data)))
 	})
 	defer shutdown()
@@ -599,7 +606,7 @@ func TestUpstreamHandleRedirection(t *testing.T) {
 			*newBulkString("a"),
 		))
 
-		addr, shutdown := newTestListener(t, func(lnAddr string, conn net.Conn) {
+		addr, shutdown := newTestRedisInstance(t, func(conn net.Conn) {
 			// assert request
 			b := make([]byte, 1024)
 			n, _ := conn.Read(b)
@@ -621,7 +628,7 @@ func TestUpstreamHandleRedirection(t *testing.T) {
 			*newBulkString("a"),
 		))
 
-		addr, shutdown := newTestListener(t, func(lnAddr string, conn net.Conn) {
+		addr, shutdown := newTestRedisInstance(t, func(conn net.Conn) {
 			// assert request
 			dec := newDecoder(conn, 2048)
 			v, err := dec.Decode()
@@ -675,7 +682,7 @@ func TestUpstreamHandleClusterDown(t *testing.T) {
 }
 
 func TestUpstreamOnHostAdd(t *testing.T) {
-	addr, shutdown := newTestListener(t, nil)
+	addr, shutdown := newTestRedisInstance(t, nil)
 	defer shutdown()
 
 	u := newTestUpstream(nil)
@@ -685,7 +692,7 @@ func TestUpstreamOnHostAdd(t *testing.T) {
 }
 
 func TestUpstreamOnHostRemove(t *testing.T) {
-	addr, shutdown := newTestListener(t, nil)
+	addr, shutdown := newTestRedisInstance(t, nil)
 	defer shutdown()
 
 	u := newTestUpstream(nil)
@@ -706,9 +713,9 @@ func TestUpstreamOnHostReplace(t *testing.T) {
 	u := newTestUpstream(nil)
 
 	// create two listeners
-	addr1, shutdown1 := newTestListener(t, nil)
+	addr1, shutdown1 := newTestRedisInstance(t, nil)
 	defer shutdown1()
-	addr2, shutdown2 := newTestListener(t, nil)
+	addr2, shutdown2 := newTestRedisInstance(t, nil)
 	defer shutdown2()
 
 	// add the host of addr1

@@ -59,7 +59,7 @@ var (
 	sumResultCommands = []string{"del", "exists", "touch", "unlink"}
 
 	// commands will never modify keys
-	readOnlyCommands map[string]struct{}
+	readOnlyCommands = map[string]struct{}{}
 )
 
 func init() {
