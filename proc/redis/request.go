@@ -113,8 +113,7 @@ func (r *simpleRequest) Body() *RespValue {
 }
 
 func (r *simpleRequest) IsReadOnly() bool {
-	cmd := string(bytes.ToLower(r.body.Array[0].Text))
-	_, ok := readOnlyCommands[cmd]
+	_, ok := readOnlyCommands[string(bytes.ToLower(r.body.Array[0].Text))]
 	return ok
 }
 

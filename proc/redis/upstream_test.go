@@ -472,6 +472,7 @@ func newTestRedisInstance(t *testing.T, handler func(conn net.Conn)) (addr strin
 	return
 }
 
+//nolint:errcheck
 func drainReadOnlyRequest(conn net.Conn) {
 	l := len(encode(newStringArray("readonly")))
 	conn.Read(make([]byte, l))
