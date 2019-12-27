@@ -13,7 +13,7 @@ func makeDefaultConfig() *config {
 	raw := &service.Config{
 		ConnectTimeout:  utils.DurationPtr(time.Second),
 		Protocol:        protocol.Redis,
-		ProtocolOptions: &service.Config_RedisOption{redisOption},
+		ProtocolOptions: &service.Config_RedisOption{RedisOption: redisOption},
 	}
 	return newConfig(raw)
 }

@@ -796,6 +796,7 @@ func TestUpstreamReadStrategy(t *testing.T) {
 		replicaInst.Shutdown()
 	}()
 
+	//nolint:errcheck
 	seedInst := newMockRedisInstance(t, func(conn net.Conn) {
 		conn.Read(make([]byte, 1024))
 		data := makeSingleMasterClusterNodes(masterInst.Addr(), replicaInst.Addr())
