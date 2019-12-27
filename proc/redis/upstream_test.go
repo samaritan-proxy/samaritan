@@ -25,12 +25,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/samaritan-proxy/samaritan/pb/config/service"
-	"github.com/samaritan-proxy/samaritan/utils"
-
 	"github.com/stretchr/testify/assert"
 
 	"github.com/samaritan-proxy/samaritan/host"
+	"github.com/samaritan-proxy/samaritan/pb/config/protocol/redis"
 	"github.com/samaritan-proxy/samaritan/proc"
 	"github.com/samaritan-proxy/samaritan/proc/internal/log"
 	"github.com/samaritan-proxy/samaritan/proc/internal/syscall"
@@ -267,10 +265,7 @@ func newTestUpstream(cfg *config, hosts ...*host.Host) *upstream {
 	stats := proc.NewUpstreamStats(stats.CreateScope("test"))
 
 	if cfg == nil {
-		// TODO: use the default config
-		cfg = newConfig(&service.Config{
-			ConnectTimeout: utils.DurationPtr(time.Second),
-		})
+		cfg = makeDefaultConfig()
 	}
 
 	if hosts == nil {
@@ -437,39 +432,64 @@ func randStr(n int) string {
 	return s[:n]
 }
 
-func newTestRedisInstance(t *testing.T, handler func(conn net.Conn)) (addr string, shutdown func()) {
+type mockRedisInstance struct {
+	l        net.Listener
+	connHdlr func(conn net.Conn)
+	done     chan struct{}
+}
+
+func newMockRedisInstance(t *testing.T, connHdlr func(conn net.Conn)) *mockRedisInstance {
 	t.Helper()
 
 	l, err := net.Listen("tcp", "127.0.0.1:0")
-	assert.NoError(t, err)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	addr = l.Addr().String()
-	shutdown = func() { l.Close() }
-	if handler == nil {
+	inst := &mockRedisInstance{
+		l:        l,
+		connHdlr: connHdlr,
+		done:     make(chan struct{}),
+	}
+
+	go inst.start()
+	return inst
+}
+
+func (inst *mockRedisInstance) Addr() string {
+	return inst.l.Addr().String()
+}
+
+func (inst *mockRedisInstance) start() {
+	defer close(inst.done)
+	if inst.connHdlr == nil {
 		return
 	}
 
-	done := make(chan struct{})
-	go func() {
-		defer close(done)
-
-		conn, err := l.Accept()
+	var wg sync.WaitGroup
+	defer wg.Wait()
+	for {
+		conn, err := inst.l.Accept()
 		if err != nil {
-			l.Close()
+			inst.l.Close()
 			return
 		}
 
-		defer conn.Close()
-		drainReadOnlyRequest(conn)
-		handler(conn)
-	}()
-
-	shutdown = func() {
-		l.Close()
-		// TODO: add timeout check to prevent the test program block.
-		<-done
+		wg.Add(1)
+		go func(conn net.Conn) {
+			defer func() {
+				conn.Close()
+				wg.Done()
+			}()
+			drainReadOnlyRequest(conn)
+			inst.connHdlr(conn)
+		}(conn)
 	}
-	return
+}
+
+func (inst *mockRedisInstance) Shutdown() {
+	inst.l.Close()
+	<-inst.done
 }
 
 //nolint:errcheck
@@ -480,7 +500,7 @@ func drainReadOnlyRequest(conn net.Conn) {
 }
 
 func TestUpstreamRefreshSlots(t *testing.T) {
-	addr, shutdown := newTestRedisInstance(t, func(conn net.Conn) {
+	inst := newMockRedisInstance(t, func(conn net.Conn) {
 		b := make([]byte, 1024)
 		n, _ := conn.Read(b)
 		// assert request
@@ -492,12 +512,12 @@ func TestUpstreamRefreshSlots(t *testing.T) {
 			conn.Close()
 			return
 		}
-		data := fmt.Sprintf("%s %s master - 0 1528688887753 7 connected 0-16383\n", randStr(40), conn.LocalAddr().String())
+		data := makeSingleMasterClusterNodes(conn.LocalAddr().String())
 		conn.Write(encode(newBulkString(data)))
 	})
-	defer shutdown()
+	defer inst.Shutdown()
 
-	u := newTestUpstream(nil, host.New(addr))
+	u := newTestUpstream(nil, host.New(inst.Addr()))
 	done := make(chan struct{})
 	go func() {
 		u.Serve()
@@ -516,19 +536,18 @@ func TestUpstreamRefreshSlots(t *testing.T) {
 }
 
 func TestUpstreamSlotsRefreshRetryOnFail(t *testing.T) {
-	addr, shutdown := newTestRedisInstance(t, func(conn net.Conn) {
-		// drainReadOnlyRequest(conn)
+	inst := newMockRedisInstance(t, func(conn net.Conn) {
 		// fail at first time
 		conn.Read(make([]byte, 1024))
 		conn.Write(encode(newError("internal error")))
 		// success at second time
 		conn.Read(make([]byte, 1024))
-		data := fmt.Sprintf("%s %s master - 0 1528688887753 7 connected 0-16383\n", randStr(40), conn.LocalAddr().String())
+		data := makeSingleMasterClusterNodes(conn.LocalAddr().String())
 		conn.Write(encode(newBulkString(data)))
 	})
-	defer shutdown()
+	defer inst.Shutdown()
 
-	u := newTestUpstream(nil, host.New(addr))
+	u := newTestUpstream(nil, host.New(inst.Addr()))
 	slotsRefMinRate = time.Second
 	done := make(chan struct{})
 	go func() {
@@ -548,15 +567,14 @@ func TestUpstreamSlotsRefreshRetryOnFail(t *testing.T) {
 }
 
 func TestUpstreamSlotsRefreshOnExecessiveRequests(t *testing.T) {
-	addr, shutdown := newTestRedisInstance(t, func(conn net.Conn) {
-		// drainReadOnlyRequest(conn)
+	inst := newMockRedisInstance(t, func(conn net.Conn) {
 		conn.Read(make([]byte, 1024))
-		data := fmt.Sprintf("%s %s master - 0 1528688887753 7 connected 0-16383\n", randStr(40), conn.LocalAddr().String())
+		data := makeSingleMasterClusterNodes(conn.LocalAddr().String())
 		conn.Write(encode(newBulkString(data)))
 	})
-	defer shutdown()
+	defer inst.Shutdown()
 
-	u := newTestUpstream(nil, host.New(addr))
+	u := newTestUpstream(nil, host.New(inst.Addr()))
 	slotsRefMinRate = time.Second * 2
 	done := make(chan struct{})
 	go func() {
@@ -607,18 +625,18 @@ func TestUpstreamHandleRedirection(t *testing.T) {
 			*newBulkString("a"),
 		))
 
-		addr, shutdown := newTestRedisInstance(t, func(conn net.Conn) {
+		inst := newMockRedisInstance(t, func(conn net.Conn) {
 			// assert request
 			b := make([]byte, 1024)
 			n, _ := conn.Read(b)
 			assert.Equal(t, encode(req.Body()), b[:n])
 		})
-		defer shutdown()
+		defer inst.Shutdown()
 
 		assertSlots := newSlotsRefreshTriggerAssert(t, u)
 		defer assertSlots()
 
-		resp := newError("moved 123 " + addr)
+		resp := newError("moved 123 " + inst.Addr())
 		u.handleRedirection(req, resp)
 		req.Wait()
 	})
@@ -629,7 +647,7 @@ func TestUpstreamHandleRedirection(t *testing.T) {
 			*newBulkString("a"),
 		))
 
-		addr, shutdown := newTestRedisInstance(t, func(conn net.Conn) {
+		inst := newMockRedisInstance(t, func(conn net.Conn) {
 			// assert request
 			dec := newDecoder(conn, 2048)
 			v, err := dec.Decode()
@@ -638,12 +656,12 @@ func TestUpstreamHandleRedirection(t *testing.T) {
 			v, _ = dec.Decode()
 			assert.Equal(t, req.Body(), v)
 		})
-		defer shutdown()
+		defer inst.Shutdown()
 
 		assertSlots := newSlotsRefreshTriggerAssert(t, u)
 		defer assertSlots()
 
-		resp := newError("ASK 123 " + addr)
+		resp := newError("ASK 123 " + inst.Addr())
 		u.handleRedirection(req, resp)
 		req.Wait()
 	})
@@ -683,20 +701,21 @@ func TestUpstreamHandleClusterDown(t *testing.T) {
 }
 
 func TestUpstreamOnHostAdd(t *testing.T) {
-	addr, shutdown := newTestRedisInstance(t, nil)
-	defer shutdown()
+	inst := newMockRedisInstance(t, nil)
+	defer inst.Shutdown()
 
 	u := newTestUpstream(nil)
-	assert.NoError(t, u.OnHostAdd(host.New(addr)))
+	assert.NoError(t, u.OnHostAdd(host.New(inst.Addr())))
 	assert.Equal(t, 1, u.hosts.Len())
-	assert.True(t, u.hosts.Exist(addr))
+	assert.True(t, u.hosts.Exist(inst.Addr()))
 }
 
 func TestUpstreamOnHostRemove(t *testing.T) {
-	addr, shutdown := newTestRedisInstance(t, nil)
-	defer shutdown()
+	inst := newMockRedisInstance(t, nil)
+	defer inst.Shutdown()
 
 	u := newTestUpstream(nil)
+	addr := inst.Addr()
 	assert.NoError(t, u.OnHostAdd(host.New(addr)))
 	assert.True(t, u.hosts.Exist(addr))
 	c, _ := u.getClient(addr)
@@ -713,19 +732,21 @@ func TestUpstreamOnHostRemove(t *testing.T) {
 func TestUpstreamOnHostReplace(t *testing.T) {
 	u := newTestUpstream(nil)
 
-	// create two listeners
-	addr1, shutdown1 := newTestRedisInstance(t, nil)
-	defer shutdown1()
-	addr2, shutdown2 := newTestRedisInstance(t, nil)
-	defer shutdown2()
+	// create two instances
+	inst1 := newMockRedisInstance(t, nil)
+	defer inst1.Shutdown()
+	inst2 := newMockRedisInstance(t, nil)
+	defer inst2.Shutdown()
 
 	// add the host of addr1
+	addr1 := inst1.Addr()
 	assert.NoError(t, u.OnHostAdd(host.New(addr1)))
 	assert.True(t, u.hosts.Exist(addr1))
 	c1, _ := u.getClient(addr1)
 	defer c1.Stop()
 
 	// replace all with the host of addr2
+	addr2 := inst2.Addr()
 	assert.NoError(t, u.OnHostReplace([]*host.Host{host.New(addr2)}))
 	time.Sleep(time.Millisecond * 300) // wait the client of addr1 close
 	assert.False(t, u.hosts.Exist(addr1))
@@ -735,4 +756,95 @@ func TestUpstreamOnHostReplace(t *testing.T) {
 	defer c2.Stop()
 	assert.NotNil(t, u.loadClients()[addr2])
 	assert.True(t, u.hosts.Exist(addr2))
+}
+
+func makeSingleMasterClusterNodes(masterAddr string, replicaAddrs ...string) (res string) {
+	masterID := randStr(40)
+	res += fmt.Sprintf("%s %s master - 0 1528688887753 7 connected 0-16383\n", masterID, masterAddr)
+	for _, replicaAddr := range replicaAddrs {
+		replicaID := randStr(40)
+		res += fmt.Sprintf("%s %s slave %s 0 1528688887753 7 connected 0-16383\n", replicaID, replicaAddr, masterID)
+	}
+	return res
+}
+
+func TestUpstreamReadStrategy(t *testing.T) {
+	rv := newStringArray("get", "a")
+	handleReq := func(conn net.Conn, counter *int) {
+		for {
+			n := len(encode(rv))
+			if _, err := conn.Read(make([]byte, n)); err != nil {
+				return
+			}
+			_, err := conn.Write(encode(newSimpleString("1")))
+			if err != nil {
+				return
+			}
+			*counter++
+		}
+	}
+
+	var masterReqCount, replicaReqCount int
+	masterInst := newMockRedisInstance(t, func(conn net.Conn) {
+		handleReq(conn, &masterReqCount)
+	})
+	replicaInst := newMockRedisInstance(t, func(conn net.Conn) {
+		handleReq(conn, &replicaReqCount)
+	})
+	defer func() {
+		masterInst.Shutdown()
+		replicaInst.Shutdown()
+	}()
+
+	seedInst := newMockRedisInstance(t, func(conn net.Conn) {
+		conn.Read(make([]byte, 1024))
+		data := makeSingleMasterClusterNodes(masterInst.Addr(), replicaInst.Addr())
+		conn.Write(encode(newBulkString(data)))
+	})
+	defer seedInst.Shutdown()
+
+	run := func(cfg *config, times int) {
+		// clear the request counter of master and replica
+		masterReqCount, replicaReqCount = 0, 0
+		u := newTestUpstream(cfg, host.New(seedInst.Addr()))
+		go u.Serve()
+		defer u.Stop()
+		time.Sleep(time.Millisecond * 100) // wait sync route
+
+		for i := 0; i < times; i++ {
+			req := newSimpleRequest(rv)
+			u.MakeRequest([]byte("a"), req)
+			req.Wait()
+		}
+	}
+	runWithStrategy := func(strategy redis.ReadStrategy, times int) {
+		cfg := makeDefaultConfig()
+		cfg.GetRedisOption().ReadStrategy = strategy
+		run(cfg, times)
+	}
+
+	t.Run("default", func(t *testing.T) {
+		run(makeDefaultConfig(), 100)
+		// assert the request counter of master and replica
+		assert.Equal(t, 100, masterReqCount)
+		assert.Equal(t, 0, replicaReqCount)
+	})
+
+	t.Run("master", func(t *testing.T) {
+		runWithStrategy(redis.ReadStrategy_MASTER, 100)
+		assert.Equal(t, 100, masterReqCount)
+		assert.Equal(t, 0, replicaReqCount)
+	})
+
+	t.Run("replica", func(t *testing.T) {
+		runWithStrategy(redis.ReadStrategy_REPLICA, 100)
+		assert.Equal(t, 0, masterReqCount)
+		assert.Equal(t, 100, replicaReqCount)
+	})
+
+	t.Run("both", func(t *testing.T) {
+		runWithStrategy(redis.ReadStrategy_BOTH, 100)
+		assert.Greater(t, masterReqCount, 0)
+		assert.Greater(t, replicaReqCount, 0)
+	})
 }

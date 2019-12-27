@@ -176,9 +176,9 @@ func (u *upstream) chooseHost(routingKey []byte, req *simpleRequest) (string, er
 	l := len(candidates)
 	if l > 1 {
 		// The concurrency-safe rand source does not scale well to multiple cores,
-		// so we use currrent time in nanoseconds to avoid it. As a result these
+		// so we use currrent unix time in microseconds to avoid it. As a result these
 		// generated values are sequential rather than random, but are acceptable.
-		i = int(time.Now().UnixNano()) % l
+		i = int(time.Now().UnixNano()/1000) % l
 	}
 	return candidates[i], nil
 }
