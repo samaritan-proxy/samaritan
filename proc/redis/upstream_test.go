@@ -768,6 +768,42 @@ func makeSingleMasterClusterNodes(masterAddr string, replicaAddrs ...string) (re
 	return res
 }
 
+//nolint:errcheck
+func TestUpstreamMakeRequest(t *testing.T) {
+	masterInst := newMockRedisInstance(t, func(conn net.Conn) {
+		// get request
+		conn.Read(make([]byte, 128))
+		conn.Write(encode(newSimpleString("1")))
+		// set request
+		conn.Read(make([]byte, 128))
+		conn.Write(encode(newSimpleString("OK")))
+	})
+	replicaInst := newMockRedisInstance(t, func(conn net.Conn) {
+		conn.Read(make([]byte, 1024))
+		data := makeSingleMasterClusterNodes(masterInst.Addr(), conn.LocalAddr().String())
+		conn.Write(encode(newBulkString(data)))
+	})
+	defer func() {
+		masterInst.Shutdown()
+		replicaInst.Shutdown()
+	}()
+
+	u := newTestUpstream(nil, host.New(replicaInst.Addr()))
+	go u.Serve()
+	defer u.Stop()
+	time.Sleep(time.Millisecond * 100) // wait sync route
+
+	// read-only request
+	req := newSimpleRequest(newStringArray("get", "a"))
+	u.MakeRequest([]byte("a"), req)
+	req.Wait()
+
+	// non read-only request
+	req = newSimpleRequest(newStringArray("set", "a", "1"))
+	u.MakeRequest([]byte("a"), req)
+	req.Wait()
+}
+
 func TestUpstreamReadStrategy(t *testing.T) {
 	rv := newStringArray("get", "a")
 	handleReq := func(conn net.Conn, counter *int) {
