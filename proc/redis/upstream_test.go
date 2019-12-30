@@ -880,6 +880,10 @@ func TestUpstreamReadStrategy(t *testing.T) {
 	})
 
 	t.Run("both", func(t *testing.T) {
+		if runtime.GOOS == "darwin" {
+			t.Skip("the time percision is microsecond not nanosecond, skip it")
+		}
+
 		runWithStrategy(redis.ReadStrategy_BOTH, 100)
 		assert.Greater(t, masterReqCount, 0)
 		assert.Greater(t, replicaReqCount, 0)
