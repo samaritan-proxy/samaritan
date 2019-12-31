@@ -44,7 +44,7 @@ func compress(algorithm redis.Compression_Algorithm, data string) string {
 
 	// compress
 	w, _ := compressor.NewWriter(algorithm.String(), &b)
-	w.Write([]byte(data))
+	w.Write([]byte(data)) //nolint:errcheck
 	_ = w.Close()
 
 	return b.String()
