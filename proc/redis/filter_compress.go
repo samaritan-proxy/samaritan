@@ -51,7 +51,6 @@ compressed data, the following diagram depicts the protocol:
 Only support string and hash commands currently, will implement others on demand in the future.
 */
 
-// cpsMagicNumber & Separator is set for the Header
 const (
 	cpsMagicNumber = "(P$"
 	cpsHdrLen      = len(cpsMagicNumber) + 3
