@@ -16,412 +16,247 @@ package redis
 
 import (
 	"bytes"
-	"errors"
-	"fmt"
-	"io"
-	"io/ioutil"
-	"reflect"
 	"strings"
 	"testing"
 
-	"github.com/golang/mock/gomock"
-	"github.com/stretchr/testify/assert"
-
+	"github.com/samaritan-proxy/samaritan/pb/config/protocol"
 	"github.com/samaritan-proxy/samaritan/pb/config/protocol/redis"
+	"github.com/samaritan-proxy/samaritan/pb/config/service"
 	"github.com/samaritan-proxy/samaritan/proc/redis/compressor"
 	_ "github.com/samaritan-proxy/samaritan/proc/redis/compressor/snappy"
+	"github.com/stretchr/testify/assert"
 )
 
-func newMockWriteCloser(
-	writerFunc func(p []byte) (n int, err error),
-	closerFunc func() error,
-) io.WriteCloser {
-	return &mockWriteCloser{writerFunc: writerFunc, closerFunc: closerFunc}
-}
-
-type mockWriteCloser struct {
-	writerFunc func(p []byte) (n int, err error)
-	closerFunc func() error
-}
-
-func (m *mockWriteCloser) Write(p []byte) (n int, err error) {
-	return m.writerFunc(p)
-}
-
-func (m *mockWriteCloser) Close() error {
-	return m.closerFunc()
-}
-
-func newMockReader(readerFunc func(p []byte) (n int, err error)) io.Reader {
-	return &mockReader{
-		readerFunc: readerFunc,
-	}
-}
-
-type mockReader struct {
-	readerFunc func(p []byte) (n int, err error)
-}
-
-func (m *mockReader) Read(p []byte) (n int, err error) {
-	return m.readerFunc(p)
-}
-
-func TestCompress(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-	c := compressor.NewMockcompressor(ctrl)
-	compressor.Register(redis.Compression_MOCK.String(), c)
-	defer compressor.UnRegister(redis.Compression_MOCK.String())
-	cpsData := []byte("cps_data")
-	c.EXPECT().NewWriter(gomock.Any()).DoAndReturn(func(w io.Writer) io.WriteCloser {
-		return newMockWriteCloser(func(p []byte) (n int, err error) {
-			assert.Equal(t, []byte("uncompressed_data"), p)
-			return w.Write(cpsData)
-		}, func() error {
-			return nil
-		})
-	})
-	dst := compress([]byte("uncompressed_data"), redis.Compression_MOCK)
-	assert.Len(t, dst, cpsHdrLen+len(cpsData))
-	assert.Equal(t, []byte{40, 80, 36, 0xff, 13, 10}, dst[:cpsHdrLen])
-	assert.Equal(t, cpsData, dst[cpsHdrLen:])
-}
-
-func genCompressFilter(t *testing.T, enable bool, method redis.Compression_Method, threshold uint32) *compressFilter {
+func makeCompressFilter(cpsCfg *redis.Compression) *compressFilter {
 	cfg := makeDefaultConfig()
-	cfg.GetRedisOption().Compression = &redis.Compression{
-		Enable:    enable,
-		Method:    method,
-		Threshold: threshold,
-	}
+	cfg.GetRedisOption().Compression = cpsCfg
 	f := newCompressFilter(cfg)
 	return f.(*compressFilter)
 }
 
-func TestCompressResp(t *testing.T) {
-	backup := compress
-	compress = func(src []byte, typ redis.Compression_Method) []byte {
-		return []byte(strings.ToUpper(string(src)))
+func compress(algorithm redis.Compression_Algorithm, data string) string {
+	var b bytes.Buffer
+
+	// header
+	b.WriteString(cpsMagicNumber)
+	b.WriteByte(byte(algorithm))
+	b.Write(CRLF)
+
+	// compress
+	w, _ := compressor.NewWriter(algorithm.String(), &b)
+	w.Write([]byte(data))
+	_ = w.Close()
+
+	return b.String()
+}
+
+func TestCompressRequest(t *testing.T) {
+	cfg := &redis.Compression{
+		Enable:    true,
+		Algorithm: redis.Compression_SNAPPY,
 	}
-	defer func() {
-		compress = backup
-	}()
-	cases := []struct {
-		Input  string
-		Expect string
+	f := makeCompressFilter(cfg)
+
+	tests := []struct {
+		cmd       string
+		req       *simpleRequest
+		expectReq *simpleRequest
+	}{}
+	addTest := func(cmd string, req, expectReq *simpleRequest) {
+		tests = append(tests, struct {
+			cmd       string
+			req       *simpleRequest
+			expectReq *simpleRequest
+		}{
+			cmd:       cmd,
+			req:       req,
+			expectReq: expectReq,
+		})
+	}
+
+	// supported commands
+	// fist value position is 2
+	for _, cmd := range []string{
+		"set", "setnx", "getset",
+	} {
+		val := strings.Repeat("0", 500)
+		compressedVal := compress(cfg.Algorithm, val)
+		req := newSimpleRequest(newStringArray(cmd, "key", val))
+		expect := newSimpleRequest(newStringArray(cmd, "key", compressedVal))
+		addTest(cmd, req, expect)
+	}
+	// fist value position is 3
+	for _, cmd := range []string{
+		"hset", "hmset", "hsetnx", "psetex", "setex",
+	} {
+		val := strings.Repeat("0", 500)
+		compressedVal := compress(cfg.Algorithm, val)
+		req := newSimpleRequest(newStringArray(cmd, "key", "dummy", val))
+		expect := newSimpleRequest(newStringArray(cmd, "key", "dummy", compressedVal))
+		addTest(cmd, req, expect)
+	}
+
+	// unsupported commands
+	// only used to test functionality, more compatibility tests will be in integration test.
+	for _, cmd := range []string{
+		"hget", "hexists", "sadd",
+	} {
+		val := strings.Repeat("0", 500)
+		req := newSimpleRequest(newStringArray(cmd, "key", val))
+		expect := newSimpleRequest(newStringArray(cmd, "key", val))
+		addTest(cmd, req, expect)
+	}
+
+	for _, test := range tests {
+		t.Run(test.cmd, func(t *testing.T) {
+			f.Do(test.cmd, test.req)
+			assert.Equal(t, test.expectReq.Body().String(), test.req.Body().String())
+		})
+	}
+}
+
+func TestDecompressNormalResponse(t *testing.T) {
+	cfg := &redis.Compression{}
+	f := makeCompressFilter(cfg)
+
+	tests := []struct {
+		typ        string
+		resp       *RespValue
+		expectResp *RespValue
 	}{
 		{
-			Input:  "set key val",
-			Expect: "set key val",
+			typ:        "integer",
+			resp:       newInteger(1),
+			expectResp: newInteger(1),
 		},
 		{
-			Input:  "set key value",
-			Expect: "set key VALUE",
+			typ:        "error",
+			resp:       newError("unknown"),
+			expectResp: newError("unknown"),
 		},
 		{
-			Input:  "mset key1 value1 key2 value2",
-			Expect: "mset key1 VALUE1 key2 VALUE2",
+			typ:        "simple string",
+			resp:       newSimpleString(compress(redis.Compression_SNAPPY, strings.Repeat("x", 500))),
+			expectResp: newSimpleString(strings.Repeat("x", 500)),
 		},
 		{
-			Input:  "mset key1 va1 key2 value2",
-			Expect: "mset key1 va1 key2 VALUE2",
+			typ:        "bulk string",
+			resp:       newBulkString(compress(redis.Compression_SNAPPY, strings.Repeat("x", 500))),
+			expectResp: newBulkString(strings.Repeat("x", 500)),
 		},
 		{
-			Input:  "getset key1 value1",
-			Expect: "getset key1 VALUE1",
-		},
-		{
-			Input:  "getset key1 val",
-			Expect: "getset key1 val",
-		},
-		{
-			Input:  "hset key f1 value1",
-			Expect: "hset key f1 VALUE1",
-		},
-		{
-			Input:  "hset key f1 val",
-			Expect: "hset key f1 val",
-		},
-		{
-			Input:  "hmset key f1 value1 f2 value2",
-			Expect: "hmset key f1 VALUE1 f2 VALUE2",
-		},
-		{
-			Input:  "hmset key f1 val f2 value2",
-			Expect: "hmset key f1 val f2 VALUE2",
-		},
-		{
-			Input:  "hsetnx key f1 value",
-			Expect: "hsetnx key f1 VALUE",
-		},
-		{
-			Input:  "hsetnx key f1 val",
-			Expect: "hsetnx key f1 val",
-		},
-		{
-			Input:  "psetex key 1000 value",
-			Expect: "psetex key 1000 VALUE",
-		},
-		{
-			Input:  "psetex key 1000 val",
-			Expect: "psetex key 1000 val",
-		},
-		{
-			Input:  "setex key 1000 value",
-			Expect: "setex key 1000 VALUE",
-		},
-		{
-			Input:  "setex key 1000 val",
-			Expect: "setex key 1000 val",
+			typ: "array",
+			resp: newStringArray(
+				compress(redis.Compression_SNAPPY, strings.Repeat("x", 500)),
+				compress(redis.Compression_SNAPPY, strings.Repeat("y", 500)),
+			),
+			expectResp: newStringArray(
+				strings.Repeat("x", 500),
+				strings.Repeat("y", 500),
+			),
 		},
 	}
-	filter := genCompressFilter(t, true, redis.Compression_MOCK, 4)
-	for idx, c := range cases {
-		t.Run(fmt.Sprintf("case %d", idx+1), func(t *testing.T) {
-			parts := strings.Split(c.Input, " ")
-			input := newStringArray(parts...)
-			filter.compress(parts[0], input)
-			assert.EqualValues(t, c.Expect, input.String())
+
+	for _, test := range tests {
+		t.Run(test.typ, func(t *testing.T) {
+			// only want to test response, so it doesn't matter what the request is.
+			req := newSimpleRequest(newStringArray("get", "key"))
+			f.Do("get", req)
+			req.SetResponse(test.resp)
+
+			// assert
+			req.Wait()
+			assert.Equal(t, test.expectResp.String(), req.Response().String())
 		})
 	}
 }
 
-func TestDecompress(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-	c := compressor.NewMockcompressor(ctrl)
-	compressor.Register(redis.Compression_MOCK.String(), c)
-	defer compressor.UnRegister(redis.Compression_MOCK.String())
-	rawData := []byte("compressed_data")
-	c.EXPECT().NewReader(gomock.Any()).DoAndReturn(func(r io.Reader) io.Reader {
-		return newMockReader(func(p []byte) (n int, err error) {
-			_, _ = ioutil.ReadAll(r)
-			n = copy(p, rawData)
-			err = io.EOF
-			return
-		})
-	}).AnyTimes()
+func TestDecompressInvalidResponse(t *testing.T) {
+	cfg := &redis.Compression{}
+	f := makeCompressFilter(cfg)
 
-	_, err := decompress(nil)
-	assert.Equal(t, errMissingCpsHdr, err)
-
-	buf := newBuffer()
-	writeCpsHeader(redis.Compression_MOCK, buf)
-	buf.WriteString("compressed_data")
-	dst, err := decompress(buf.Bytes())
-	assert.NoError(t, err)
-	assert.Equal(t, rawData, dst)
-}
-
-func genCompressedData(t *testing.T, method interface{}, data interface{}) []byte {
-	buf := bytes.NewBuffer(nil)
-
-	buf.WriteString(MagicNumber)
-
-	switch m := method.(type) {
-	case byte:
-		buf.WriteByte(m)
-	case redis.Compression_Method:
-		buf.WriteByte(byte(m))
-	default:
-		t.Fatalf("unexpected type of method: %s", reflect.TypeOf(method).String())
-	}
-
-	buf.WriteString(Separator)
-
-	switch d := data.(type) {
-	case string:
-		buf.WriteString(d)
-	case []byte:
-		buf.Write(d)
-	default:
-		t.Fatalf("unexpected type of data")
-	}
-
-	return buf.Bytes()
-}
-
-func TestDecompressResp(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	cases := []struct {
-		Input  *RespValue
-		Expect *RespValue
+	tests := []struct {
+		name    string
+		spoilFn func(data *[]byte)
 	}{
-		/*
-			Array
-		*/
 		{
-			Input: newByteArray(
-				genCompressedData(t, redis.Compression_MOCK, "hello"),
-				genCompressedData(t, redis.Compression_MOCK, "hello"),
-			),
-			Expect: newByteArray([]byte{0, 0, 0, 1}, []byte{0, 0, 0, 1}),
+			name: "missing header",
+			spoilFn: func(data *[]byte) {
+				*data = []byte("1")
+			},
 		},
 		{
-			Input: newByteArray(
-				// unknown compress method
-				genCompressedData(t, byte(0xfd), "hello"),
-				genCompressedData(t, redis.Compression_MOCK, "hello"),
-			),
-			Expect: newByteArray(
-				genCompressedData(t, byte(0xfd), "hello"),
-				[]byte{0, 0, 0, 1},
-			),
+			name: "missing magic number",
+			spoilFn: func(data *[]byte) {
+				*data = (*data)[len(cpsMagicNumber):]
+			},
 		},
 		{
-			Input: newByteArray(
-				// uncompress error
-				genCompressedData(t, redis.Compression_MOCK, "hell"),
-				genCompressedData(t, redis.Compression_MOCK, "hello"),
-			),
-			Expect: newByteArray(
-				genCompressedData(t, redis.Compression_MOCK, "hell"),
-				[]byte{0, 0, 0, 1},
-			),
-		},
-		/*
-			Simple String
-		*/
-		{
-			Input:  newSimpleBytes(genCompressedData(t, redis.Compression_MOCK, "hello")),
-			Expect: newSimpleBytes([]byte{0, 0, 0, 1}),
+			name: "invalid algorithm",
+			spoilFn: func(data *[]byte) {
+				(*data)[len(cpsMagicNumber)] = 128
+			},
 		},
 		{
-			// unknown compress method
-			Input:  newSimpleBytes(genCompressedData(t, byte(0xfd), "hello")),
-			Expect: newSimpleBytes(genCompressedData(t, byte(0xfd), "hello")),
-		},
-		{
-			// uncompress error
-			Input:  newSimpleBytes(genCompressedData(t, redis.Compression_MOCK, "hell")),
-			Expect: newSimpleBytes(genCompressedData(t, redis.Compression_MOCK, "hell")),
-		},
-		/*
-			Others
-		*/
-		{
-			Input:  nil,
-			Expect: nil,
-		},
-		{
-			Input:  newInteger(17),
-			Expect: newInteger(17),
-		},
-		{
-			Input:  newError("foo"),
-			Expect: newError("foo"),
-		},
-		{
-			// the error msg should not be decompress
-			Input:  newError(string(genCompressedData(t, redis.Compression_MOCK, "hello"))),
-			Expect: newError(string(genCompressedData(t, redis.Compression_MOCK, "hello"))),
+			name: "invalid body",
+			spoilFn: func(data *[]byte) {
+				copy((*data)[cpsHdrLen:], bytes.Repeat([]byte("na"), 10))
+			},
 		},
 	}
-	c := compressor.NewMockcompressor(ctrl)
-	compressor.Register(redis.Compression_MOCK.String(), c)
-	defer compressor.UnRegister(redis.Compression_MOCK.String())
-	c.EXPECT().NewReader(gomock.Any()).DoAndReturn(func(r io.Reader) io.Reader {
-		return newMockReader(func(p []byte) (n int, err error) {
-			b, _ := ioutil.ReadAll(r)
-			if !bytes.Equal(b, []byte("hello")) {
-				return 0, errors.New("error")
-			}
-			n = copy(p, []byte{0, 0, 0, 1})
-			err = io.EOF
-			return
-		})
-	}).AnyTimes()
-	filter := genCompressFilter(t, true, redis.Compression_MOCK, 1)
 
-	for idx, c := range cases {
-		t.Run(fmt.Sprintf("case %d", idx+1), func(t *testing.T) {
-			filter.decompress(c.Input)
-			assert.True(t, c.Expect.Equal(c.Input))
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			req := newSimpleRequest(newStringArray("get", "a"))
+			f.Do("get", req)
+
+			val := []byte(compress(redis.Compression_SNAPPY, strings.Repeat("x", 500)))
+			// spoil the value
+			test.spoilFn(&val)
+			req.SetResponse(newBulkBytes(val))
+
+			// assert
+			req.Wait()
+			assert.Equal(t, newBulkBytes(val).String(), req.Response().String())
 		})
 	}
 }
 
-func TestCompressFilterDo(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-	c := compressor.NewMockcompressor(ctrl)
-	compressor.Register(redis.Compression_MOCK.String(), c)
-	defer compressor.UnRegister(redis.Compression_MOCK.String())
-	c.EXPECT().NewWriter(gomock.Any()).DoAndReturn(func(w io.Writer) io.WriteCloser {
-		return newMockWriteCloser(func(p []byte) (n int, err error) {
-			assert.Equal(t, []byte("00000000000000000000"), p)
-			return w.Write([]byte{0, 0, 0, 1})
-		}, func() error {
-			return nil
-		})
-	}).Times(1)
-	c.EXPECT().NewReader(gomock.Any()).DoAndReturn(func(r io.Reader) io.Reader {
-		return newMockReader(func(p []byte) (n int, err error) {
-			b, _ := ioutil.ReadAll(r)
-			assert.Equal(t, []byte{0, 0, 0, 1}, b)
-			n = copy(p, make([]byte, 10))
-			err = io.EOF
-			return
-		})
-	}).Times(1)
-
-	cpsFilter := genCompressFilter(t, true, redis.Compression_MOCK, 1)
-
-	t.Run("set", func(t *testing.T) {
-		req := newSimpleRequest(newStringArray("set", "A", "00000000000000000000"))
-		cpsFilter.Do("set", req)
-		assert.Equal(t, genCompressedData(t, redis.Compression_MOCK, []byte{0, 0, 0, 1}), req.Body().Array[2].Text)
-	})
-
-	t.Run("get", func(t *testing.T) {
-		req := newSimpleRequest(newStringArray("get", "A"))
-		cpsFilter.Do("get", req)
-		req.SetResponse(newStringArray(string(genCompressedData(t, redis.Compression_MOCK, []byte{0, 0, 0, 1}))))
-		req.Wait()
-		assert.Equal(t, make([]byte, 10), req.resp.Array[0].Text)
-	})
-
-	t.Run("cfg", func(t *testing.T) {
-		for idx, c := range []func(){
-			func() {
-				cpsFilter.cfg = nil
-			},
-			func() {
-				cpsFilter.cfg.ProtocolOptions = nil
-			},
-			func() {
-				cpsFilter.cfg.GetRedisOption().Compression = nil
-			},
-			func() {
-				cpsFilter.cfg.GetRedisOption().Compression.Enable = false
-			},
-		} {
-			cpsFilter.cfg = genCompressFilter(t, true, redis.Compression_MOCK, 1).cfg
-			t.Run(fmt.Sprintf("case %d", idx+1), func(t *testing.T) {
-				c()
-				req := newSimpleRequest(newStringArray("set", "A", "00000000000000000000"))
-				cpsFilter.Do("set", req)
-				assert.True(t, req.Body().Equal(newStringArray("set", "A", "00000000000000000000")))
-			})
-
-		}
-	})
-}
-
-func BenchmarkSnappyCompress1K(b *testing.B) {
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		raw := make([]byte, 1024)
-		compress(raw, redis.Compression_SNAPPY)
+func TestCompressFilterDoWithCompressionOff(t *testing.T) {
+	run := func(cfg *config) {
+		f := newCompressFilter(cfg)
+		status := f.Do("get", newSimpleRequest(newStringArray("get", "a")))
+		assert.Equal(t, Continue, status)
 	}
+
+	// no protocol options
+	cfg := makeDefaultConfig()
+	cfg.ProtocolOptions = nil
+	run(cfg)
+
+	// no compression config
+	cfg.ProtocolOptions = &service.Config_RedisOption{
+		RedisOption: &protocol.RedisOption{},
+	}
+	run(cfg)
+
+	// not enabled
+	cfg.GetRedisOption().Compression = &redis.Compression{
+		Enable: false,
+	}
+	run(cfg)
 }
 
-func BenchmarkSnappyCompress1M(b *testing.B) {
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		raw := make([]byte, 1024*1024)
-		compress(raw, redis.Compression_SNAPPY)
+func TestCompressFilterRejectBannedCommands(t *testing.T) {
+	cfg := &redis.Compression{
+		Enable: true,
+	}
+	f := makeCompressFilter(cfg)
+
+	for cmd := range bannedCmdsInCps {
+		req := newSimpleRequest(newStringArray(cmd))
+		status := f.Do(cmd, req)
+		assert.Equal(t, Stop, status)
+		assert.Equal(t, Error, req.Response().Type)
 	}
 }
