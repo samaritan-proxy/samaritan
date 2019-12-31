@@ -197,7 +197,7 @@ func (p *redisProc) handleRequest(req *rawRequest) {
 	hdlr, ok := p.findHandler(cmd)
 	if !ok {
 		// unsupported command
-		req.SetResponse(newError(fmt.Sprintf("unsupported command %s", cmd)))
+		req.SetResponse(newError(fmt.Sprintf("ERR unsupported command '%s'", cmd)))
 		return
 	}
 

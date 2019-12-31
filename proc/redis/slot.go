@@ -20,19 +20,20 @@ import (
 	"strings"
 )
 
-type redisHost struct {
+// instance represents a redis instance.
+type instance struct {
 	ID       string
 	Addr     string
 	MasterID string
-	Replicas []*redisHost
+	Replicas []*instance
 	Slots    []int
 }
 
 var errInvalidClusterNodes = errors.New("invalid cluster nodes")
 
-func parseClusterNodes(data string) (map[string]*redisHost, error) {
+func parseClusterNodes(data string) (map[string]*instance, error) {
 	lines := strings.Split(data, "\n")
-	hosts := make(map[string]*redisHost)
+	insts := make(map[string]*instance)
 	for _, line := range lines {
 		fields := strings.Fields(line)
 		// the last line is empty
@@ -49,12 +50,12 @@ func parseClusterNodes(data string) (map[string]*redisHost, error) {
 			return nil, errInvalidClusterNodes
 		}
 		// TODO: detect flags
-		host := &redisHost{ID: id, Addr: addr}
-		hosts[id] = host
+		inst := &instance{ID: id, Addr: addr}
+		insts[id] = inst
 
 		isMaster := fields[3] == "-"
 		if !isMaster {
-			host.MasterID = fields[3]
+			inst.MasterID = fields[3]
 			continue
 		}
 
@@ -66,19 +67,19 @@ func parseClusterNodes(data string) (map[string]*redisHost, error) {
 		if err != nil {
 			return nil, err
 		}
-		host.Slots = slots
+		inst.Slots = slots
 	}
 
 	// restructure replicas
-	for id, host := range hosts {
-		if host.MasterID == "" {
+	for id, inst := range insts {
+		if inst.MasterID == "" {
 			continue
 		}
-		master := hosts[host.MasterID]
-		master.Replicas = append(master.Replicas, host)
-		delete(hosts, id)
+		master := insts[inst.MasterID]
+		master.Replicas = append(master.Replicas, inst)
+		delete(insts, id)
 	}
-	return hosts, nil
+	return insts, nil
 }
 
 func parseClusterNodesSlot(segements []string) ([]int, error) {

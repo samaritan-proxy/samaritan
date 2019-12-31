@@ -15,6 +15,7 @@
 package redis
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"strconv"
@@ -102,14 +103,18 @@ func newSimpleRequest(v *RespValue) *simpleRequest {
 	return &simpleRequest{
 		createdAt: time.Now(),
 		body:      v,
-		// pre-alloc
-		hooks: make([]func(*simpleRequest), 0, 4),
-		done:  make(chan struct{}),
+		hooks:     make([]func(*simpleRequest), 0, 4), // pre-alloc
+		done:      make(chan struct{}),
 	}
 }
 
 func (r *simpleRequest) Body() *RespValue {
 	return r.body
+}
+
+func (r *simpleRequest) IsReadOnly() bool {
+	_, ok := readOnlyCommands[string(bytes.ToLower(r.body.Array[0].Text))]
+	return ok
 }
 
 func (r *simpleRequest) Duration() time.Duration {

@@ -27,9 +27,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/samaritan-proxy/samaritan/pb/config/protocol"
 	"github.com/samaritan-proxy/samaritan/pb/config/protocol/redis"
-	"github.com/samaritan-proxy/samaritan/pb/config/service"
 	"github.com/samaritan-proxy/samaritan/proc/redis/compressor"
 	_ "github.com/samaritan-proxy/samaritan/proc/redis/compressor/snappy"
 )
@@ -90,17 +88,12 @@ func TestCompress(t *testing.T) {
 }
 
 func genCompressFilter(t *testing.T, enable bool, method redis.Compression_Method, threshold uint32) *compressFilter {
-	cfg := newConfig(&service.Config{
-		ProtocolOptions: &service.Config_RedisOption{
-			RedisOption: &protocol.RedisOption{
-				Compression: &redis.Compression{
-					Enable:    enable,
-					Method:    method,
-					Threshold: threshold,
-				},
-			},
-		},
-	})
+	cfg := makeDefaultConfig()
+	cfg.GetRedisOption().Compression = &redis.Compression{
+		Enable:    enable,
+		Method:    method,
+		Threshold: threshold,
+	}
 	f := newCompressFilter(cfg)
 	return f.(*compressFilter)
 }

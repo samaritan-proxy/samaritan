@@ -445,7 +445,7 @@ Strategy of a read only command.
 | Name | Number | Description |
 | ---- | ------ | ----------- |
 | MASTER | 0 | Read from master nodes. |
-| SLAVE | 1 | Read from slave nodes. |
+| REPLICA | 1 | Read from replica nodes. |
 | BOTH | 2 | Read from all nodes. |
 
 

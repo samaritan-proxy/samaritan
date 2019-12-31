@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"github.com/samaritan-proxy/samaritan/host"
+	"github.com/samaritan-proxy/samaritan/pb/config/protocol/redis"
 	"github.com/samaritan-proxy/samaritan/proc"
 	"github.com/samaritan-proxy/samaritan/proc/internal/log"
 	netutil "github.com/samaritan-proxy/samaritan/proc/internal/net"
@@ -64,9 +65,9 @@ type upstream struct {
 	clientsMu         sync.Mutex
 	createClientCalls sync.Map // map[string]*createClientCall
 
-	slots               [slotNum]*redisHost
-	slotsRefTriggerHook func() // only used to testing
+	slots               [slotNum]*instance
 	slotsRefreshCh      chan struct{}
+	slotsRefTriggerHook func() // only used to testing
 	slotsLastUpdateTime time.Time
 
 	quit chan struct{}
@@ -124,8 +125,8 @@ func (u *upstream) HotKeys() []hotkey.HotKey {
 	return u.hkc.HotKeys()
 }
 
-func (u *upstream) MakeRequest(key []byte, req *simpleRequest) {
-	addr, err := u.chooseHost(key)
+func (u *upstream) MakeRequest(routingKey []byte, req *simpleRequest) {
+	addr, err := u.chooseHost(routingKey, req)
 	if err != nil {
 		req.SetResponse(newError(err.Error()))
 		return
@@ -133,19 +134,53 @@ func (u *upstream) MakeRequest(key []byte, req *simpleRequest) {
 	u.MakeRequestToHost(addr, req)
 }
 
-func (u *upstream) chooseHost(key []byte) (string, error) {
-	hash := crc16(hashtag(key))
-	rhost := u.slots[hash&(slotNum-1)]
-	if rhost != nil {
-		return rhost.Addr, nil
+func (u *upstream) chooseHost(routingKey []byte, req *simpleRequest) (string, error) {
+	hash := crc16(hashtag(routingKey))
+	inst := u.slots[hash&(slotNum-1)]
+
+	// There is no redis instance which is responsible for the specified slot.
+	// The possible reasons are as follows:
+	// 1) The proxy has just started, and has not yet pulled routing information.
+	// 2) The redis cluster has some temporary problems, and will recover automatically later.
+	// To avoid these problems, could randomly choose one from the provided seed hosts.
+	if inst == nil {
+		return u.randomHost()
 	}
 
-	// slot has no owner, choose one from the provided hosts randomly.
-	host, err := u.randomHost()
-	if err != nil {
-		return "", err
+	if !req.IsReadOnly() {
+		return inst.Addr, nil
 	}
-	return host.Addr, nil
+
+	// read-only requests
+	var candidates []string
+	readStrategy := redis.ReadStrategy_MASTER
+	if option := u.cfg.GetRedisOption(); option != nil {
+		readStrategy = option.ReadStrategy
+	}
+	switch readStrategy {
+	case redis.ReadStrategy_MASTER:
+		candidates = append(candidates, inst.Addr)
+	case redis.ReadStrategy_BOTH:
+		candidates = append(candidates, inst.Addr)
+		fallthrough
+	case redis.ReadStrategy_REPLICA:
+		for _, replica := range inst.Replicas {
+			candidates = append(candidates, replica.Addr)
+		}
+	}
+
+	if len(candidates) == 0 {
+		candidates = append(candidates, inst.Addr)
+	}
+	i := 0
+	l := len(candidates)
+	if l > 1 {
+		// The concurrency-safe rand source does not scale well to multiple cores,
+		// so we use currrent unix time in nanoseconds to avoid it. As a result these
+		// generated values are sequential rather than random, but are acceptable.
+		i = int(time.Now().UnixNano()) % l
+	}
+	return candidates[i], nil
 }
 
 func (u *upstream) MakeRequestToHost(addr string, req *simpleRequest) {
@@ -365,12 +400,12 @@ func (u *upstream) refreshSlots() {
 	return
 }
 
-func (u *upstream) randomHost() (*host.Host, error) {
-	if u.hosts.Len() == 0 {
-		return nil, errors.New("no available host")
-	}
+func (u *upstream) randomHost() (string, error) {
 	h := u.hosts.Random()
-	return h, nil
+	if h == nil {
+		return "", errors.New("no available host")
+	}
+	return h.Addr, nil
 }
 
 func (u *upstream) doSlotsRefresh() error {
@@ -380,11 +415,11 @@ func (u *upstream) doSlotsRefresh() error {
 	)
 	req := newSimpleRequest(v)
 
-	h, err := u.randomHost()
+	addr, err := u.randomHost()
 	if err != nil {
 		return err
 	}
-	u.MakeRequestToHost(h.Addr, req)
+	u.MakeRequestToHost(addr, req)
 
 	// wait done
 	req.Wait()
@@ -395,19 +430,19 @@ func (u *upstream) doSlotsRefresh() error {
 	if resp.Type != BulkString {
 		return errInvalidClusterNodes
 	}
-	hosts, err := parseClusterNodes(string(resp.Text))
+	insts, err := parseClusterNodes(string(resp.Text))
 	if err != nil {
 		return err
 	}
 
 	// update slots
-	for _, host := range hosts {
-		for _, slot := range host.Slots {
+	for _, inst := range insts {
+		for _, slot := range inst.Slots {
 			if slot < 0 || slot >= slotNum {
 				continue
 			}
 			// NOTE: it's safe in x86-64 platform.
-			u.slots[slot] = host
+			u.slots[slot] = inst
 		}
 	}
 	return nil
@@ -480,13 +515,12 @@ type client struct {
 	enc    *encoder
 	dec    *decoder
 
+	filter         *FilterChain
+	keyCounter     *hotkey.Counter
 	pendingReqs    chan *simpleRequest
 	processingReqs chan *simpleRequest
-	keyCounter     *hotkey.Counter
-	filter         *FilterChain
-
-	onRedirection func(req *simpleRequest, resp *RespValue)
-	onClusterDown func(req *simpleRequest, resp *RespValue)
+	onRedirection  func(req *simpleRequest, resp *RespValue)
+	onClusterDown  func(req *simpleRequest, resp *RespValue)
 
 	quitOnce sync.Once
 	quit     chan struct{}
@@ -525,6 +559,12 @@ func newClient(conn net.Conn, cfg *config, logger log.Logger, options ...clientO
 	if err := c.initFilters(); err != nil {
 		return nil, err
 	}
+	// Normally replica nodes will redirect clients to the authoritative master for
+	// the hash slot involved in a given command. If want to read queries from these
+	// replica nodes, clients must issue READONLY command firstly. Also the READONLY
+	// command is harmless to the master node, more details see: https://redis.io/commands/readonly
+	readOnlyReq := newSimpleRequest(newStringArray("readonly"))
+	c.Send(readOnlyReq)
 	return c, nil
 }
 
