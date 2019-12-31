@@ -19,8 +19,6 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
-
-	"github.com/samaritan-proxy/samaritan/pb/config/protocol/redis"
 )
 
 func TestRegister(t *testing.T) {
@@ -28,14 +26,14 @@ func TestRegister(t *testing.T) {
 	defer ctrl.Finish()
 
 	c := NewMockcompressor(ctrl)
-	Register(redis.Compression_MOCK.String(), c)
-	defer UnRegister(redis.Compression_MOCK.String())
+	Register("mock", c)
+	defer UnRegister("mock")
 
-	cps, ok := get(redis.Compression_MOCK.String())
+	cps, ok := get("mock")
 	assert.True(t, ok)
 	assert.Equal(t, c, cps)
 
 	assert.Panics(t, func() {
-		Register(redis.Compression_MOCK.String(), c)
+		Register("mock", c)
 	})
 }
