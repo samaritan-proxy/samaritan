@@ -32,10 +32,12 @@ func TestHotKeyFilterDo(t *testing.T) {
 	}{
 		// commands without params
 		{cmd: "ping", rv: newStringArray("ping")},
+		{cmd: "readonly", rv: newStringArray("readonly")},
 		// special commands with params
 		{cmd: "eval", rv: newStringArray("eval", "xxx")},
 		{cmd: "auth", rv: newStringArray("auth", "passwd")},
 		{cmd: "cluster", rv: newStringArray("cluster", "nodes")},
+		{cmd: "scan", rv: newStringArray("scan", "0")},
 		// normal commands
 		{cmd: "get", rv: newStringArray("get", "a")},
 		{cmd: "set", rv: newStringArray("set", "a", "1")},
