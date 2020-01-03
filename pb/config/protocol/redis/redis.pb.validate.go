@@ -43,10 +43,10 @@ func (m *Compression) Validate() error {
 
 	// no validation rules for Enable
 
-	if _, ok := _Compression_Method_InLookup[m.GetMethod()]; !ok {
+	if _, ok := _Compression_Algorithm_InLookup[m.GetAlgorithm()]; !ok {
 		return CompressionValidationError{
-			field:  "Method",
-			reason: "value must be in list [0 254]",
+			field:  "Algorithm",
+			reason: "value must be in list [0 255]",
 		}
 	}
 
@@ -114,7 +114,7 @@ var _ interface {
 	ErrorName() string
 } = CompressionValidationError{}
 
-var _Compression_Method_InLookup = map[Compression_Method]struct{}{
+var _Compression_Algorithm_InLookup = map[Compression_Algorithm]struct{}{
 	0:   {},
-	254: {},
+	255: {},
 }

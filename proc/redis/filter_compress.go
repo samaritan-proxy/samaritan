@@ -46,88 +46,131 @@ compressed data, the following diagram depicts the protocol:
       magic number                              |
                                                 |
                                                 +
+
+
+Only support string and hash commands currently, will implement others on demand in the future.
 */
 
-// MagicNumber & Separator is set for the Header
 const (
-	MagicNumber = "(P$"
-	Separator   = "\r\n"
+	cpsMagicNumber = "(P$"
+	cpsHdrLen      = len(cpsMagicNumber) + 3
 )
 
 var (
-	cpsHdrLen = len(MagicNumber) + 1 + len(Separator)
-
-	errMissingCpsHdr          = errors.New("missing cps header")
-	errCpsMagicNumberNotFound = errors.New("cps magic number not found")
-	errInvalidCpsType         = errors.New("invalid cps type")
-	errUnsupportedCpsType     = errors.New("unsupported cps type")
-
-	// bannedCmdInCps is a set of commands that are disabled in compress mode.
-	bannedCmdInCps = map[string]struct{}{
-		"append":   {},
-		"eval":     {},
-		"setbit":   {},
-		"getbit":   {},
-		"setrange": {},
-		"getrange": {},
-	}
-
+	// compress headers
+	cpsHdrs = make(map[redis.Compression_Algorithm][]byte)
+	// the commands which are disabled in compress mode.
+	bannedCmdsInCps = make(map[string]struct{})
 	// well known commands which could skip decompress check
-	wkSkipCheckCmdsInDecps = map[string]struct{}{
-		// string commands
-		"incr":   {},
-		"decr":   {},
-		"incrby": {},
-		"decrby": {},
+	wkSkipCheckCmdsInDecps = make(map[string]struct{})
 
-		// Hash commands
-		"hkeys":        {},
-		"hincrby":      {},
-		"hincrbyfloat": {},
-
-		// List commands
-		"lpop":   {},
-		"lpush":  {},
-		"rpop":   {},
-		"rpush":  {},
-		"lrange": {},
-		"lindex": {},
-
-		// Set commands
-		"spop":     {},
-		"sunion":   {},
-		"smembers": {},
-
-		// Zset commands
-		"zadd":          {},
-		"zrange":        {},
-		"zcard":         {},
-		"zrangebyscore": {},
-
-		"cluster": {},
-		"ping":    {},
-	}
-
-	cpsHdrs = map[redis.Compression_Method][]byte{}
+	// errors
+	errMissingCpsHdr           = errors.New("missing cps header")
+	errMissingCpsMagicNumber   = errors.New("missing cps magic number")
+	errInvalidCpsAlgorithm     = errors.New("invalid cps algorithm")
+	errUnsupportedCpsAlgorithm = errors.New("unsupported cps algorithm")
 )
 
 func init() {
-	methods := []redis.Compression_Method{snappy.Name, redis.Compression_MOCK}
-	for _, method := range methods {
-		hdr := make([]byte, cpsHdrLen)
-		copy(hdr, MagicNumber)
-		hdr[len(MagicNumber)] = byte(method)
-		copy(hdr[len(MagicNumber)+1:], Separator)
-		cpsHdrs[method] = hdr
+	// init the map of commands which is disabled in compress mode
+	for _, cmd := range []string{
+		"append", "eval", "setbit", "getbit", "setrange", "getrange",
+	} {
+		bannedCmdsInCps[cmd] = struct{}{}
+	}
+
+	// init the map of commands which could skip decompress check.
+	for _, cmd := range []string{
+		"incr", "decr", "incrby", "decrby", // string
+		"hkeys", "hincrby", "hincrbyfloat", // hash
+		"lpop", "lpush", "rpop", "rpush", "lrange", "lindex", // list
+		"spop", "sunion", "smembers", // set
+		"zadd", "zrange", "zcard", "zrangebyscore", // zset
+		"cluster", "ping", // special
+	} {
+		wkSkipCheckCmdsInDecps[cmd] = struct{}{}
+	}
+
+	// init cps headers map
+	algorithms := []redis.Compression_Algorithm{snappy.Name}
+	for _, algorithm := range algorithms {
+		var b bytes.Buffer
+		b.WriteString(cpsMagicNumber)
+		b.WriteByte(byte(algorithm))
+		b.Write(CRLF)
+		cpsHdrs[algorithm] = b.Bytes()
 	}
 }
 
-// writeCpsHeader generates compress header from specific compressType
-func writeCpsHeader(typ redis.Compression_Method, buf buffer) {
-	buf.Write(cpsHdrs[typ])
+type compressFilter struct {
+	cfg   *config
+	stats *stats.Scope
 }
 
-var compress = func(src []byte, algorithm redis.Compression_Method) []byte {
+func newCompressFilter(cfg *config) Filter {
+	f := &compressFilter{
+		cfg: cfg,
+	}
+	// TODO: add stats
+	return f
+}
+
+func (f *compressFilter) Do(cmd string, req *simpleRequest) FilterStatus {
+	// skip if compression config is null
+	if f.cfg == nil ||
+		f.cfg.GetRedisOption() == nil ||
+		f.cfg.GetRedisOption().GetCompression() == nil {
+		return Continue
+	}
+
+	// register decompression hook if needed.
+	if _, ok := wkSkipCheckCmdsInDecps[cmd]; !ok {
+		req.RegisterHook(func(request *simpleRequest) {
+			f.Decompress(request.resp)
+		})
+	}
+
+	// skip if the compression is not enabled.
+	cfg := f.cfg.GetRedisOption().GetCompression()
+	if !cfg.Enable {
+		return Continue
+	}
+	// reject the banned commands.
+	if _, ok := bannedCmdsInCps[cmd]; ok {
+		errStr := fmt.Sprintf("ERR command '%s' is disabled in compress mode", cmd)
+		req.SetResponse(newError(errStr))
+		return Stop
+	}
+	f.Compress(cfg, cmd, req.body)
+	return Continue
+}
+
+func (f *compressFilter) Compress(cfg *redis.Compression, command string, resp *RespValue) {
+	// get the offset of first value in resp array, there are two kind command:
+	// 1) command key value
+	// 2) command key field1 value1 [field2 value2]...
+	//    command key time value
+	var offset int
+	switch command {
+	case "set", "getset", "setnx":
+		offset = 2
+	case "hset", "hmset", "hsetnx", "psetex", "setex":
+		offset = 3
+	default:
+		return
+	}
+
+	for i := offset; i < len(resp.Array); i += 2 {
+		r := resp.Array[i]
+		if uint32(len(r.Text)) < cfg.Threshold {
+			continue
+		}
+		r.Text = f.compress(r.Text, cfg.Algorithm)
+		resp.Array[i] = r
+	}
+}
+
+func (f *compressFilter) compress(src []byte, algorithm redis.Compression_Algorithm) []byte {
 	b := newBuffer()
 	defer b.Close()
 
@@ -136,8 +179,7 @@ var compress = func(src []byte, algorithm redis.Compression_Method) []byte {
 		return src
 	}
 
-	writeCpsHeader(algorithm, b)
-
+	b.Write(cpsHdrs[algorithm])
 	if _, err := w.Write(src); err != nil {
 		w.Close()
 		return src
@@ -154,36 +196,44 @@ var compress = func(src []byte, algorithm redis.Compression_Method) []byte {
 	return src[:n]
 }
 
-func getCompressorName(id int32) (string, error) {
-	name, ok := redis.Compression_Method_name[id]
-	if !ok {
-		return "", errInvalidCpsType
+func (f *compressFilter) Decompress(resp *RespValue) {
+	switch resp.Type {
+	case Integer, Error:
+		return
+	case Array:
+		for idx, r := range resp.Array {
+			f.Decompress(&r)
+			resp.Array[idx] = r
+		}
+	default:
+		if dst, err := f.decompress(resp.Text); err == nil {
+			resp.Text = dst
+		}
 	}
-	return name, nil
 }
 
-var decompress = func(src []byte) ([]byte, error) {
+func (f *compressFilter) decompress(src []byte) ([]byte, error) {
+	// check header
 	if len(src) < cpsHdrLen {
 		return nil, errMissingCpsHdr
 	}
-	if !bytes.Equal([]byte(MagicNumber), src[:len(MagicNumber)]) {
-		return nil, errCpsMagicNumberNotFound
+	if !bytes.Equal([]byte(cpsMagicNumber), src[:len(cpsMagicNumber)]) {
+		return nil, errMissingCpsMagicNumber
 	}
-	name, err := getCompressorName(int32(src[len(MagicNumber)]))
-	if err != nil {
-		return nil, err
+	algorithm, ok := redis.Compression_Algorithm_name[int32(src[len(cpsMagicNumber)])]
+	if !ok {
+		return nil, errInvalidCpsAlgorithm
 	}
 
+	// decode with specified algorithm
 	br := newReader()
 	defer br.Close()
-
-	r, err := compressor.NewReader(name, br)
+	r, err := compressor.NewReader(algorithm, br)
 	if err != nil {
-		return nil, errUnsupportedCpsType
+		return nil, errUnsupportedCpsAlgorithm
 	}
 
 	br.Reset(src[cpsHdrLen:])
-
 	b := newBuffer()
 	defer b.Close()
 	_, err = b.ReadFrom(r)
@@ -193,113 +243,6 @@ var decompress = func(src []byte) ([]byte, error) {
 	dst := make([]byte, b.Len())
 	copy(dst, b.Bytes())
 	return dst, nil
-}
-
-type compressFilter struct {
-	cfg   *config
-	stats *stats.Scope
-}
-
-func newCompressFilter(cfg *config) Filter {
-	f := &compressFilter{
-		cfg: cfg,
-	}
-	// TODO: add stats
-	return f
-}
-
-func (compressFilter) isCommandDisabled(command string) bool {
-	_, ok := bannedCmdInCps[command]
-	return ok
-}
-
-func (compressFilter) needDecompress(command string) bool {
-	_, ok := wkSkipCheckCmdsInDecps[command]
-	return !ok
-}
-
-func (f *compressFilter) compress(command string, resp *RespValue) {
-	if resp == nil {
-		return
-	}
-
-	var offset int
-	// offset of first value in resp array,
-	// there are two kind command:
-	// 1: like "SET", "MSET", offset is 2
-	// 	comand key [key]..
-	//
-	// 2: like "HSET", "HMSET", "HSETNX", offset is 3
-	// 	command key field1 [value1] field2 [value2] ...
-	//	command key time [value]
-	switch command {
-	case "set", "mset", "getset", "setnx":
-		offset = 2
-	case "hset", "hmset", "hsetnx", "psetex", "setex":
-		offset = 3
-	default:
-		return
-	}
-
-	cpsCfg := f.cfg.GetRedisOption().GetCompression()
-	for i := offset; i < len(resp.Array); i += 2 {
-		r := resp.Array[i]
-		if uint32(len(r.Text)) < cpsCfg.Threshold {
-			continue
-		}
-		r.Text = compress(r.Text, cpsCfg.Method)
-		resp.Array[i] = r
-	}
-}
-
-func (f *compressFilter) decompress(resp *RespValue) {
-	if resp == nil {
-		return
-	}
-
-	switch resp.Type {
-	case Integer, Error:
-		return
-	case Array:
-		for idx, r := range resp.Array {
-			f.decompress(&r)
-			resp.Array[idx] = r
-		}
-	default:
-		if dst, err := decompress(resp.Text); err == nil {
-			resp.Text = dst
-		}
-	}
-}
-
-func (f *compressFilter) Do(cmd string, req *simpleRequest) FilterStatus {
-	// skip processing when compression config is null
-	if f == nil ||
-		f.cfg == nil ||
-		f.cfg.GetRedisOption() == nil ||
-		f.cfg.GetRedisOption().GetCompression() == nil {
-		return Continue
-	}
-
-	if f.needDecompress(cmd) {
-		req.RegisterHook(func(request *simpleRequest) {
-			f.decompress(request.resp)
-		})
-	}
-
-	cpsCfg := f.cfg.GetRedisOption().GetCompression()
-	if !cpsCfg.Enable {
-		return Continue
-	}
-
-	if f.isCommandDisabled(cmd) {
-		errStr := fmt.Sprintf("command '%s' is disabled in compress mode", cmd)
-		req.SetResponse(newError(errStr))
-		return Stop
-	}
-
-	f.compress(cmd, req.body)
-	return Continue
 }
 
 func (*compressFilter) Destroy() {

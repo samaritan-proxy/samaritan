@@ -35,7 +35,7 @@
 - [config/protocol/redis/redis.proto](#config/protocol/redis/redis.proto)
     - [Compression](#redis.Compression)
   
-    - [Compression.Method](#redis.Compression.Method)
+    - [Compression.Algorithm](#redis.Compression.Algorithm)
     - [ReadStrategy](#redis.ReadStrategy)
   
   
@@ -415,7 +415,7 @@ Configuration of compression.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | enable | [bool](#bool) |  | Switch of compress, default is off. NOTE: Uncompress will always work. |
-| method | [Compression.Method](#redis.Compression.Method) |  | Compression algorithm used in compression filter. |
+| algorithm | [Compression.Algorithm](#redis.Compression.Algorithm) |  | Compression algorithm used in compression filter. |
 | threshold | [uint32](#uint32) |  | Value will be ignored when byte length of value is less than the threshold, must be greater than 0. |
 
 
@@ -425,15 +425,14 @@ Configuration of compression.
  
 
 
-<a name="redis.Compression.Method"></a>
+<a name="redis.Compression.Algorithm"></a>
 
-### Compression.Method
+### Compression.Algorithm
 
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
 | SNAPPY | 0 |  |
-| MOCK | 255 |  |
 
 
 

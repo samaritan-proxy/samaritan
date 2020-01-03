@@ -45,15 +45,13 @@ message Compression {
   // NOTE: Uncompress will always work.
   bool enable = 1;
 
-  enum Method {
+  enum Algorithm {
     SNAPPY = 0;
-
-    MOCK = 255;
 
     reserved 256 to max;
   }
   // Compression algorithm used in compression filter.
-  Method method = 2 [ (validate.rules).enum = {in : [ 0, 254 ]} ];
+  Algorithm algorithm = 2 [ (validate.rules).enum = {in : [ 0, 255 ]} ];
 
   // Value will be ignored when byte length of value is less than the
   // threshold, must be greater than 0.
