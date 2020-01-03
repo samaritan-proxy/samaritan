@@ -42,7 +42,7 @@ func (f *hotKeyFilter) extractKey(cmd string, v *RespValue) string {
 	}
 
 	switch cmd {
-	case "eval", "cluster", "auth":
+	case "eval", "cluster", "auth", "scan":
 		return ""
 	default:
 		// TODO: truncate key
