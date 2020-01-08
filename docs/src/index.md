@@ -7,7 +7,7 @@ You can call it **Sam (sam)** for simplicity.
 
 ## Why
 
-At the beginning of our adapting to [SOA](or [Microservices] if that make more sense to you), we used [HAProxy] as a client-side load balancer.
+At the beginning of our adapting to [SOA] (or [Microservices] if that make more sense to you), we used [HAProxy] as a client-side load balancer.
 It does the job, painfully, as we have to do a file-based re-configuration whenever a change happens to the back-end nodes.
 
 The maintenance of the configuration file really hurts our OPs a lot, not to mention that a reload to HAProxy causes downtime.
