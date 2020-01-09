@@ -165,7 +165,7 @@ func (n *freqNode) PopItem() *itemNode {
 
 	item := n.itemHead
 	item.next.prev = nil
-	n.itemHead = item
+	n.itemHead = item.next
 	return item
 }
 

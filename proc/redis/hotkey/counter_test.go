@@ -15,8 +15,11 @@
 package hotkey
 
 import (
+	"fmt"
+	"math/rand"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -58,4 +61,13 @@ func TestCounterFree(t *testing.T) {
 	c := NewCounter(3, freeCb)
 	c.Free()
 	assert.True(t, called)
+}
+
+func TestCounterChaoticIncr(t *testing.T) {
+	c := NewCounter(16, nil)
+	rand.Seed(time.Now().UnixNano())
+	for i := 0; i < 10000; i++ {
+		key := fmt.Sprintf("k%d", rand.Intn(100))
+		c.Incr(key)
+	}
 }
