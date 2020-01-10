@@ -81,12 +81,37 @@ func TestSessionWriteError(t *testing.T) {
 
 		// make a request
 		sconn, _ := l.Accept()
-		sconn.Write(encode(newArray( //nolint:errcheck
-			*newBulkString("get"),
-			*newBulkString("a"),
-		)))
+		sconn.Write(encode(newStringArray("get", "a"))) //nolint:errcheck
 		<-done
 		sconn.Close()
 	})
 	<-done
+}
+
+func TestSessionExitWithPipelineFull(t *testing.T) {
+	cconn, sconn := net.Pipe()
+
+	p := newRedisTestProc(t)
+	s := newSession(p, sconn)
+	done := make(chan struct{})
+	go func() {
+		s.Serve()
+		close(done)
+	}()
+	defer func() { <-done }()
+
+	// send massive requests to make the pipeline buffer full
+	go func() {
+		for {
+			_, err := cconn.Write(encode(newStringArray("get", "a")))
+			if err != nil {
+				return
+			}
+		}
+	}()
+
+	// wait for filling the pipeline buffer
+	time.Sleep(time.Millisecond * 300)
+	// After sent massive requests, the client exits without reading any response.
+	cconn.Close() //nolint:errcheck
 }

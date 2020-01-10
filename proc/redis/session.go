@@ -49,24 +49,27 @@ func (s *session) Serve() {
 	go func() {
 		s.loopWrite()
 		s.conn.Close()
+		s.doQuit()
 		close(writeDone)
 	}()
 
 	s.loopRead()
 	s.conn.Close()
-	s.quitOnce.Do(func() {
-		close(s.quit)
-	})
+	s.doQuit()
 	<-writeDone
 	close(s.done)
 }
 
 func (s *session) Close() {
+	s.doQuit()
+	s.conn.Close()
+	<-s.done
+}
+
+func (s *session) doQuit() {
 	s.quitOnce.Do(func() {
 		close(s.quit)
 	})
-	s.conn.Close()
-	<-s.done
 }
 
 func (s *session) loopRead() {
@@ -81,7 +84,12 @@ func (s *session) loopRead() {
 
 		req := newRawRequest(v)
 		s.p.handleRequest(req)
-		s.processingReqs <- req
+
+		select {
+		case s.processingReqs <- req:
+		case <-s.quit:
+			return
+		}
 	}
 }
 
