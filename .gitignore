@@ -22,7 +22,7 @@ _testmain.go
 *.exe
 *.test
 *.prof
-/bin/
+bin/
 *.cfg
 .vagrant
 TAGS
@@ -30,7 +30,7 @@ cover.out
 __pycache__/
 .pytest_cache
 *.pyc
-/docs/site/
+docs/site/
 website
 .release
 coverage.txt
