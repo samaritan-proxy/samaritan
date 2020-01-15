@@ -48,5 +48,6 @@ deploy:
   # deploy images to dockerhub
   - provider: script
     script: echo "$DOCKER_ACCESS_TOKEN" | docker login -u "$DOCKER_USERNAME" --password-stdin && make push-release-image
+    skip_cleanup: true
     on:
       tags: true
