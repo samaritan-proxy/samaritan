@@ -32,7 +32,7 @@ func init() {
 
 // Basic consts
 const (
-	Version = "1.0.0-dev"
+	Version = "1.0.0-rc1"
 	// AppName is used in metrics
 	AppName = "samaritan"
 )
