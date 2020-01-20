@@ -8,10 +8,9 @@
 [![Docs](https://img.shields.io/badge/docs-latest-green.svg)](https://samaritan-proxy.github.io/docs/)
 [![LICENSE](https://img.shields.io/github/license/samaritan-proxy/samaritan.svg?style=flat-square)](https://github.com/samaritan-proxy/samaritan/blob/master/LICENSE)
 
-**Samaritan (səˈmerətn)** is a client side proxy that works on L4 or L7 write by golang, provide high availability and load balancing.
-You can call it Sam (sam) for simplicity.
+**Samaritan (səˈmerətn)** is a client side L4 or L7 proxy, written in Golang, with the aim to provide high availability and load balancing.You can call it Sam (sam) for simplicity.
 
-_We name this project Samaritan for saving our OPs from extreme misery:_
+_We named this project Samaritan for saving our OPs from extreme misery:_
 
 > A charitable or helpful person (with reference to Luke 10:33).
 >
@@ -19,7 +18,7 @@ _We name this project Samaritan for saving our OPs from extreme misery:_
 
 ## Features
 
-- Fast, efficient and lightweight, working on client side
+- Fast, efficient, lightweight and works on the client side
 
 - Hot restart, zero downtime
 
@@ -31,7 +30,7 @@ _We name this project Samaritan for saving our OPs from extreme misery:_
 
 ## Documentation
 
-- For the specific topics including introduction, quick start, architecture, etc, see [docs](https://samaritan-proxy.github.io/docs/)
+- For documentation about specific topics, including introduction, quick start, architecture, etc, see [docs](https://samaritan-proxy.github.io/docs/)
 - Examples can be found in the [examples directory](examples/).
 
 ## License
