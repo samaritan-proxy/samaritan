@@ -27,7 +27,7 @@ import (
 	"go.uber.org/atomic"
 
 	"github.com/samaritan-proxy/samaritan/utils"
-	"github.com/samaritan-proxy/samaritan/utils/multi-errors"
+	multierror "github.com/samaritan-proxy/samaritan/utils/multi-errors"
 )
 
 // Type indicates the type of host.
@@ -287,6 +287,8 @@ type Set struct {
 	all           map[string]*Host
 	healthyMain   map[string]*Host
 	healthyBackup map[string]*Host
+	// the cache of current healthy hosts
+	healthyCache atomic.Value // []*Host
 }
 
 // NewSet creates a set.
@@ -317,6 +319,7 @@ func (set *Set) addToHealthy(host ...*Host) {
 			continue
 		}
 	}
+	set.buildHealthyCache()
 }
 
 func (set *Set) removeFromHealthy(host ...*Host) {
@@ -336,6 +339,24 @@ func (set *Set) removeFromHealthy(host ...*Host) {
 			continue
 		}
 	}
+	set.buildHealthyCache()
+}
+
+func (set *Set) buildHealthyCache() {
+	hostMap := set.healthy()
+
+	keys := make([]string, 0, len(hostMap))
+	for k := range hostMap {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	hosts := make([]*Host, 0, len(hostMap))
+	for _, k := range keys {
+		hosts = append(hosts, hostMap[k])
+	}
+
+	set.healthyCache.Store(hosts)
 }
 
 // Add adds host to the set.
@@ -410,21 +431,9 @@ func (set *Set) healthy() map[string]*Host {
 }
 
 // Healthy returns the healthy hosts.
-func (set *Set) Healthy() (hosts []*Host) {
-	set.RLock()
-	defer set.RUnlock()
-	healthyHosts := set.healthy()
-	keys := make([]string, 0, len(healthyHosts))
-	for k := range healthyHosts {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-
-	hosts = make([]*Host, 0, len(healthyHosts))
-	for _, k := range keys {
-		hosts = append(hosts, healthyHosts[k])
-	}
-	return
+func (set *Set) Healthy() []*Host {
+	hosts, _ := set.healthyCache.Load().([]*Host)
+	return hosts
 }
 
 // All returns the all hosts.
