@@ -445,7 +445,7 @@ func TestSetReplaceAll(t *testing.T) {
 	assert.Equal(t, len(set.All()), 1)
 }
 
-func TestMarkRemoved(t *testing.T) {
+func TestMarkHostRemoved(t *testing.T) {
 	host := NewWithType(":1234", TypeMain)
 	done := make(chan struct{})
 	go func() {
