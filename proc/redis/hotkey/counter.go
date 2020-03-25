@@ -141,7 +141,10 @@ func (c *Counter) Free() {
 	if c.freeCb != nil {
 		c.freeCb()
 	}
-	c.items = nil
+
+	c.mu.Lock()
+	c.reset()
+	c.mu.Unlock()
 }
 
 type freqNode struct {
