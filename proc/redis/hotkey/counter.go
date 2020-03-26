@@ -24,7 +24,7 @@ import (
 //
 // It's not goroutine-safe, every redis client should have its own.
 type Counter struct {
-	rwmu     sync.RWMutex
+	mu       sync.Mutex
 	capacity uint8
 	freeCb   func()
 	items    map[string]*itemNode
@@ -43,12 +43,12 @@ func NewCounter(capacity uint8, freeCb func()) *Counter {
 
 // Incr increases the specified key visits.
 func (c *Counter) Incr(key string) {
-	c.rwmu.Lock()
+	c.mu.Lock()
 	item, ok := c.items[key]
 	if ok {
 		// update the item's freq
 		c.increment(item)
-		c.rwmu.Unlock()
+		c.mu.Unlock()
 		return
 	}
 
@@ -59,18 +59,18 @@ func (c *Counter) Incr(key string) {
 	}
 	item = &itemNode{key: key}
 	c.add(item)
-	c.rwmu.Unlock()
+	c.mu.Unlock()
 }
 
 // Latch returns the cached key visits and reset it.
 func (c *Counter) Latch() map[string]uint64 {
-	c.rwmu.RLock()
+	c.mu.Lock()
 	res := make(map[string]uint64, len(c.items))
 	for key, item := range c.items {
 		res[key] = item.freqNode.freq
 	}
 	c.reset()
-	c.rwmu.RUnlock()
+	c.mu.Unlock()
 	return res
 }
 
@@ -141,7 +141,10 @@ func (c *Counter) Free() {
 	if c.freeCb != nil {
 		c.freeCb()
 	}
-	c.items = nil
+
+	c.mu.Lock()
+	c.reset()
+	c.mu.Unlock()
 }
 
 type freqNode struct {
