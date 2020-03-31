@@ -29,6 +29,7 @@ _We named this project Samaritan as it saves our OPs from extreme misery:_
 - Good observability
 
 - First-class Redis cluster support
+
     - commond level stats
     - cluster scan
     - transparent compression
