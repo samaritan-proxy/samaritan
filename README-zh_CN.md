@@ -48,6 +48,7 @@
 ### 相关文章
 
 - [详解 Samaritan——饿了么最新开源的透明代理](https://mp.weixin.qq.com/s?__biz=MzA4ODg0NDkzOA==&mid=2247487045&amp;idx=1&amp;sn=846c3fd05a52378cb22f623cc05d564c&source=41)
+- [如何快速定位 Redis 热点 key](https://mp.weixin.qq.com/s/rZs-oWBGGYtNKLMpI0-tXw)
 
 ## 许可协议
 
