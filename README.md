@@ -8,6 +8,8 @@
 [![Docs](https://img.shields.io/badge/docs-latest-green.svg)](https://samaritan-proxy.github.io/docs/)
 [![LICENSE](https://img.shields.io/github/license/samaritan-proxy/samaritan.svg?style=flat-square)](https://github.com/samaritan-proxy/samaritan/blob/master/LICENSE)
 
+English | [简体中文](./README-zh_CN.md)
+
 **Samaritan (səˈmerətn)** is a client side L4 or L7 proxy, written in Golang, with the aim to provide high availability and load balancing. You can call it Sam (sam) for simplicity.
 
 _We named this project Samaritan as it saves our OPs from extreme misery:_
@@ -27,6 +29,15 @@ _We named this project Samaritan as it saves our OPs from extreme misery:_
 - Good observability
 
 - First-class Redis cluster support
+    - commond level stats
+    - cluster scan
+    - transparent compression
+    - hotkey in real time
+
+## Status
+
+It is deployed on every container and virtual machine in the production environment at ELEME, proxying all traffic to the basic components including Redis, MySQL, MQ, etc.
+And the total number of running instances is close to sixty thousand.
 
 ## Documentation
 
