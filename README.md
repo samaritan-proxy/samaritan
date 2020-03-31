@@ -17,6 +17,8 @@ _We named this project Samaritan as it saves our OPs from extreme misery:_
 > A charitable or helpful person (with reference to Luke 10:33).
 >
 > "suddenly, miraculously, a Good Samaritan leaned over and handed the cashier a dollar bill on my behalf"
+>
+> https://www.lexico.com/definition/samaritan
 
 ## Features
 

@@ -10,13 +10,15 @@
 
 [English](./README.md) | 简体中文
 
-**Samaritan (səˈmerətn)** 是一个使用 Go 开发的，工作在客户端的透明代理，同时支持四层和七层代理, 目标是提供负载均衡和高可用性。为了简单，我们一般也叫它 Sam(sam)。
+**Samaritan (səˈmerətn)** 是一个使用 Go 开发的，工作在客户端模式的透明代理，能够同时支持四层和七层, 目标是提供负载均衡和高的可用性。为了简单，你也可以叫它 Sam(sam)。
 
 *我们以 Samaritan 命令该项目，是希望它能够把我们从痛苦的运维工作中解救出来:*
 
 > A charitable or helpful person (with reference to Luke 10:33).
 >
 > "suddenly, miraculously, a Good Samaritan leaned over and handed the cashier a dollar bill on my behalf"
+>
+> https://www.lexico.com/definition/samaritan
 
 ## 特性
 
