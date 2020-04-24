@@ -637,7 +637,12 @@ func (c *client) loopWrite() {
 				goto FAIL
 			}
 		}
-		c.processingReqs <- req
+
+		select {
+		case <-c.quit:
+			return
+		case c.processingReqs <- req:
+		}
 	}
 
 FAIL:
