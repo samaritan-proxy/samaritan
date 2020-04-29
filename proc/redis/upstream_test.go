@@ -260,6 +260,45 @@ func TestUpstreamClientHandleResp(t *testing.T) {
 	assert.Equal(t, Error, req.Response().Type)
 }
 
+func TestUpstreamClientExitWithPipelineFull(t *testing.T) {
+	cconn, sconn := net.Pipe()
+	c := newTestClient(t, cconn, nil)
+	done := make(chan struct{})
+	go func() {
+		c.Start()
+		close(done)
+	}()
+	defer func() { <-done }()
+
+	go func() {
+		// send massive requests to make the pipeline buffer full
+		for {
+			req := newSimpleRequest(newStringArray("ping"))
+			c.Send(req)
+
+			select {
+			case <-done:
+				return
+			default:
+			}
+		}
+	}()
+
+	go func() {
+		for {
+			_, err := sconn.Read(make([]byte, 1024))
+			if err != nil {
+				return
+			}
+		}
+	}()
+
+	// wait for filling the pipeline buffer
+	time.Sleep(time.Millisecond * 300)
+	// simulating the network broken
+	sconn.Close() //nolint:errcheck
+}
+
 func newTestUpstream(cfg *config, hosts ...*host.Host) *upstream {
 	logger := log.New("[test]")
 	stats := proc.NewUpstreamStats(stats.CreateScope("test"))
