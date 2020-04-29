@@ -1,11 +1,9 @@
 name: reviewdog
 on:
-  push:
   pull_request:
 
 jobs:
   golangci-lint:
-    if: github.event_name == 'pull_request'
     name: runner / golangci-lint
     runs-on: ubuntu-latest
     steps:
@@ -18,7 +16,6 @@ jobs:
           reporter: github-pr-check
 
   shellcheck:
-    if: github.event_name == 'pull_request'
     name: runner / shellcheck
     runs-on: ubuntu-latest
     steps:
