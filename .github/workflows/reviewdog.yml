@@ -5,6 +5,7 @@ on:
 
 jobs:
   reviewdog-github-check:
+    if: github.event_name == 'push'
     name: reviewdog (github-check)
     runs-on: ubuntu-latest
     steps:
@@ -18,18 +19,18 @@ jobs:
       - uses: actions/checkout@v2
 
       - name: Install linters
-        run: '( cd linters && go get golang.org/x/lint/golint )'
+        run: go get golang.org/x/lint/golint
 
       - name: Setup reviewdog
         run: |
-          # mkdir -p $HOME/bin && curl -sfL https://raw.githubusercontent.com/reviewdog/reviewdog/master/install.sh| sh -s -- -b $HOME/bin
-          # echo ::add-path::$HOME/bin
-          go install ./cmd/reviewdog
+          mkdir -p $HOME/bin && curl -sfL https://raw.githubusercontent.com/reviewdog/reviewdog/master/install.sh| sh -s -- -b $HOME/bin
+          echo ::add-path::$HOME/bin
       - name: Run reviewdog
         env:
           REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           golint ./... | reviewdog -f=golint -name=golint-github-check -reporter=github-check -level=warning
+
   reviewdog-pr:
     if: github.event_name == 'pull_request'
     name: reviewdog on Pull Request
@@ -53,18 +54,18 @@ jobs:
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-
+
       - name: Download Go Modules
         if: steps.cache.outputs.cache-hit != 'true'
         run: go mod download
 
       - name: Install linters
-        run: '( cd linters && go get golang.org/x/lint/golint )'
+        run: go get golang.org/x/lint/golint
 
       - name: Setup reviewdog
         run: |
-          # mkdir -p $HOME/bin && curl -sfL https://raw.githubusercontent.com/reviewdog/reviewdog/master/install.sh| sh -s -- -b $HOME/bin
-          # echo ::add-path::$HOME/bin
-          go install ./cmd/reviewdog
+          mkdir -p $HOME/bin && curl -sfL https://raw.githubusercontent.com/reviewdog/reviewdog/master/install.sh| sh -s -- -b $HOME/bin
+          echo ::add-path::$HOME/bin
       - name: Run reviewdog (github-pr-check)
         continue-on-error: true
         env:
@@ -80,6 +81,7 @@ jobs:
           # [1]: https://github.com/actions/toolkit/blob/master/docs/commands.md#problem-matchers
           echo "::remove-matcher owner=go::"
           golint ./... | reviewdog -f=golint -name=golint-pr-review -reporter=github-pr-review -tee
+
   golangci-lint:
     if: github.event_name == 'pull_request'
     name: runner / golangci-lint
@@ -93,30 +95,6 @@ jobs:
           level: "warning"
           reporter: github-pr-check
 
-  misspell:
-    name: runner / misspell
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: reviewdog/action-misspell@v1
-        with:
-          github_token: ${{ secrets.github_token }}
-          locale: "US"
-          reporter: github-check
-
-  languagetool:
-    name: runner / languagetool
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: reviewdog/action-languagetool@v1
-        with:
-          github_token: ${{ secrets.github_token }}
-          reporter: github-check
-          level: info
-          patterns: |
-            **/*.md
-            !**/testdata/**
   shellcheck:
     if: github.event_name == 'pull_request'
     name: runner / shellcheck
