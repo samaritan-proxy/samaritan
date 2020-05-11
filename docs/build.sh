@@ -23,3 +23,4 @@ set -o nounset
 dir=$(dirname $0)
 pip install -r $dir/requirements.txt
 mkdocs build -f $dir/mkdocs.yml
+cp -R $dir/swagger $dir/site/

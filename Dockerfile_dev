@@ -64,6 +64,16 @@ RUN dir=$GOPATH/src/$PROTOC_GEN_JSONIFY_REPO && \
     rm -rf .git && \
     go install ./
 
+ENV PROTOC_GEN_SWAGGER_VERSION 1.12.1
+ENV PROTOC_GEN_SWAGGER_REPO "github.com/grpc-ecosystem/grpc-gateway"
+RUN dir=$GOPATH/src/$PROTOC_GEN_SWAGGER_REPO && \
+    mkdir -p $dir && \
+    git clone --branch v$PROTOC_GEN_SWAGGER_VERSION --depth 1 \
+    https://$PROTOC_GEN_SWAGGER_REPO $dir && \
+    cd $dir && \
+    rm -rf .git && \
+    cd protoc-gen-swagger && \
+    go install ./
 
 ### End Protobuf
 
