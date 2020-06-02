@@ -32,12 +32,15 @@ build() {
         -o "$output" \
         -ldflags="${ld_flags}" \
         "./cmd/${target}/"
+    echo "Output: ${output}"
 
     # link bin/${bin_name} to the binary when not compiling across platforms
     hostos=$(go env GOHOSTOS)
     hostarch=$(go env GOHOSTARCH)
     if [ "$GOOS" == "$hostos" ] && [ "$GOARCH" == "$hostarch" ]; then
-        cp "$output" "bin/${bin_name}"
+        shortcut="bin/${bin_name}"
+        cp "$output" "$shortcut"
+        echo "Shortcut: $shortcut"
     fi
 }
 
