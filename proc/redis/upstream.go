@@ -185,15 +185,15 @@ func (u *upstream) chooseHost(routingKey []byte, req *simpleRequest) (string, er
 
 func (u *upstream) MakeRequestToHost(addr string, req *simpleRequest) {
 	// request metrics
-	u.stats.RqTotal.Inc()
-	req.RegisterHook(func(req *simpleRequest) {
-		if req.Response().Type == Error {
-			u.stats.RqFailureTotal.Inc()
-		} else {
-			u.stats.RqSuccessTotal.Inc()
-		}
-		u.stats.RqDurationMs.Record(uint64(req.Duration() / time.Millisecond))
-	})
+	// u.stats.RqTotal.Inc()
+	// req.RegisterHook(func(req *simpleRequest) {
+	// if req.Response().Type == Error {
+	// u.stats.RqFailureTotal.Inc()
+	// } else {
+	// u.stats.RqSuccessTotal.Inc()
+	// }
+	// u.stats.RqDurationMs.Record(uint64(req.Duration() / time.Millisecond))
+	// })
 
 	select {
 	case <-u.quit:
@@ -323,7 +323,7 @@ func (u *upstream) handleRedirection(req *simpleRequest, resp *RespValue) {
 	hostAddr := err[2]
 	switch strings.ToLower(err[0]) {
 	case MOVED:
-		u.stats.Counter("moved").Inc()
+		// u.stats.Counter("moved").Inc()
 		u.MakeRequestToHost(hostAddr, req)
 	case ASK:
 		askingReq := newSimpleRequest(newArray(
@@ -383,17 +383,17 @@ func (u *upstream) loopRefreshSlots() {
 }
 
 func (u *upstream) refreshSlots() {
-	scope := u.stats.NewChild("slots_refresh")
-	scope.Counter("total").Inc()
+	// scope := u.stats.NewChild("slots_refresh")
+	// scope.Counter("total").Inc()
 	err := u.doSlotsRefresh()
 	if err == nil {
 		u.logger.Debugf("refresh slots success")
-		scope.Counter("success_total").Inc()
+		// scope.Counter("success_total").Inc()
 		u.slotsLastUpdateTime = time.Now()
 		return
 	}
 
-	scope.Counter("failure_total").Inc()
+	// scope.Counter("failure_total").Inc()
 	u.logger.Warnf("fail to refresh slots: %v, will retry...", err)
 	// retry
 	u.triggerSlotsRefresh()
@@ -569,15 +569,15 @@ func newClient(conn net.Conn, cfg *config, logger log.Logger, options ...clientO
 }
 
 func (c *client) initFilters() error {
-	filters := []Filter{
-		newHotKeyFilter(c.keyCounter),
-		newCompressFilter(c.cfg),
-	}
+	// filters := []Filter{
+	// newHotKeyFilter(c.keyCounter),
+	// newCompressFilter(c.cfg),
+	// }
 
 	chain := newRequestFilterChain()
-	for _, filter := range filters {
-		chain.AddFilter(filter)
-	}
+	// for _, filter := range filters {
+	// chain.AddFilter(filter)
+	// }
 	c.filter = chain
 	return nil
 }
@@ -621,11 +621,11 @@ func (c *client) loopWrite() {
 		case req = <-c.pendingReqs:
 		}
 
-		switch c.filter.Do(req) {
-		case Continue:
-		case Stop:
-			continue
-		}
+		// switch c.filter.Do(req) {
+		// case Continue:
+		// case Stop:
+		// continue
+		// }
 
 		err = c.enc.Encode(req.Body())
 		if err != nil {

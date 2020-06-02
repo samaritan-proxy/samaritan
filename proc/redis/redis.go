@@ -19,7 +19,6 @@ import (
 	"net"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/samaritan-proxy/samaritan/host"
 	"github.com/samaritan-proxy/samaritan/pb/config/protocol"
@@ -175,16 +174,16 @@ func (p *redisProc) handleConn(conn net.Conn) {
 
 func (p *redisProc) handleRequest(req *rawRequest) {
 	// rawRequest metrics
-	p.stats.Downstream.RqTotal.Inc()
-	req.RegisterHook(func(req *rawRequest) {
-		switch req.Response().Type {
-		case Error:
-			p.stats.Downstream.RqFailureTotal.Inc()
-		default:
-			p.stats.Downstream.RqSuccessTotal.Inc()
-		}
-		p.stats.Downstream.RqDurationMs.Record(uint64(req.Duration() / time.Millisecond))
-	})
+	// p.stats.Downstream.RqTotal.Inc()
+	// req.RegisterHook(func(req *rawRequest) {
+	// switch req.Response().Type {
+	// case Error:
+	// p.stats.Downstream.RqFailureTotal.Inc()
+	// default:
+	// p.stats.Downstream.RqSuccessTotal.Inc()
+	// }
+	// p.stats.Downstream.RqDurationMs.Record(uint64(req.Duration() / time.Millisecond))
+	// })
 
 	// check
 	if !req.IsValid() {
@@ -201,20 +200,20 @@ func (p *redisProc) handleRequest(req *rawRequest) {
 		return
 	}
 
-	cmdStats := hdlr.stats
-	cmdStats.Total.Inc()
-	req.RegisterHook(func(req *rawRequest) {
-		switch req.Response().Type {
-		case Error:
-			cmdStats.Error.Inc()
-		default:
-			cmdStats.Success.Inc()
-		}
-		latency := uint64(req.Duration() / time.Microsecond)
-		cmdStats.LatencyMicros.Record(latency)
-		if latency > p.cfg.slowReqThresholdInMicros {
-			p.stats.Counter("rq_slow_total").Inc()
-		}
-	})
+	// cmdStats := hdlr.stats
+	// cmdStats.Total.Inc()
+	// req.RegisterHook(func(req *rawRequest) {
+	// switch req.Response().Type {
+	// case Error:
+	// cmdStats.Error.Inc()
+	// default:
+	// cmdStats.Success.Inc()
+	// }
+	// latency := uint64(req.Duration() / time.Microsecond)
+	// cmdStats.LatencyMicros.Record(latency)
+	// if latency > p.cfg.slowReqThresholdInMicros {
+	// p.stats.Counter("rq_slow_total").Inc()
+	// }
+	// })
 	hdlr.handle(p.u, req)
 }
