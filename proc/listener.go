@@ -196,12 +196,12 @@ func (l *listener) handleRawConn(rawConn net.Conn) {
 func (l *listener) wrapRawConn(rawConn net.Conn) net.Conn {
 	c := netutil.New(rawConn)
 	// TODO(kirk91): use hook to replace it.
-	stats := &netutil.Stats{
-		WriteTotal: l.stats.CxTxBytesTotal,
-		ReadTotal:  l.stats.CxRxBytesTotal,
-		Duration:   l.stats.CxLengthSec,
-	}
-	c.SetStats(stats)
+	// stats := &netutil.Stats{
+	// WriteTotal: l.stats.CxTxBytesTotal,
+	// ReadTotal:  l.stats.CxRxBytesTotal,
+	// Duration:   l.stats.CxLengthSec,
+	// }
+	// c.SetStats(stats)
 	return c
 }
 
