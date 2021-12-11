@@ -2933,6 +2933,11 @@ func testAsk(t *testing.T) {
 		t.Error(err)
 		return
 	}
+
+	result, err = c.Set("a{hello}", "world")
+	assert.NoError(t, err)
+	assert.Equal(t, "OK", result)
+
 	_, err = c1.Exec("CLUSTER", "SETSLOT", slot, "MIGRATING", dstID)
 	if err != nil {
 		t.Error(err)
@@ -2944,17 +2949,24 @@ func testAsk(t *testing.T) {
 		return
 	}
 
-	result, err = c.Set("a{hello}", "world")
-	assert.NoError(t, err)
-	assert.Equal(t, "OK", result)
-
+	// before migrate
 	val, err := c.Get("a{hello}")
+	assert.NoError(t, err)
+	assert.Equal(t, "world", val)
+
+	// migrating
+	_, err = c1.Exec("MIGRATE", "127.0.0.1", "8001", "a{hello}", 0, "5000")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	val, err = c.Get("a{hello}")
 	assert.NoError(t, err)
 	assert.Equal(t, "world", val)
 
 	c1.Exec("CLUSTER", "SETSLOT", slot, "STABLE")
 	c2.Exec("CLUSTER", "SETSLOT", slot, "STABLE")
-
+	// after migrate
 	val, err = c.Get("a{hello}")
 	assert.Equal(t, err, ErrNil)
 	assert.Equal(t, "", val)
