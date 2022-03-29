@@ -6,7 +6,7 @@ require (
 	github.com/coreos/go-semver v0.3.0
 	github.com/envoyproxy/protoc-gen-validate v0.1.0
 	github.com/ghodss/yaml v1.0.0
-	github.com/gogo/protobuf v1.3.0
+	github.com/gogo/protobuf v1.3.2
 	github.com/golang/mock v1.3.1
 	github.com/golang/protobuf v1.3.2 // indirect
 	github.com/golang/snappy v0.0.1
@@ -18,6 +18,6 @@ require (
 	github.com/tevino/log v0.0.0-20191011110715-a95875091fd9
 	github.com/tevino/tcp-shaker v0.0.0-20190306083616-9f5b7a96d888
 	go.uber.org/atomic v1.4.0
-	golang.org/x/sys v0.0.0-20190907184412-d223b2b6db03
+	golang.org/x/sys v0.0.0-20200930185726-fdedc70b468f
 	google.golang.org/grpc v1.23.1
 )
