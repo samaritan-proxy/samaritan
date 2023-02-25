@@ -18,6 +18,6 @@ require (
 	github.com/tevino/log v0.0.0-20191011110715-a95875091fd9
 	github.com/tevino/tcp-shaker v0.0.0-20190306083616-9f5b7a96d888
 	go.uber.org/atomic v1.4.0
-	golang.org/x/sys v0.0.0-20190907184412-d223b2b6db03
+	golang.org/x/sys v0.1.0
 	google.golang.org/grpc v1.23.1
 )
